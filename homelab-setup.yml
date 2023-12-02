@@ -1,0 +1,45 @@
+---
+- name: Homelab base setup
+  hosts: Proxmox
+  become: true
+  vars_files:
+    - ~/secrets/creds.yml
+  no_log: true
+  roles:
+    - proxmox_management
+    - vm_init
+    #- k3s-init
+    #- portainer_init
+  vars:
+    ansible_become_pass: "{{ become_password }}"
+
+- name: Install Observability stack (observer)
+  hosts: Prometheus
+  become: true
+  vars_files:
+    - ~/secrets/creds.yml
+  # no_log: true
+  tags:
+    - monitoring
+    - observer
+  roles:
+    - prometheus_prod
+  vars:
+    ansible_become_pass: "{{ become_password }}"
+
+- name: Install Observability stack
+  hosts: all:!Proxmox
+  become: true
+  vars_files:
+    - ~/secrets/creds.yml
+  tags:
+    - monitoring
+    - target
+  roles:
+    - observibility
+  vars:
+    ansible_become_pass: "{{ become_password }}"
+
+# # TODO
+# use proxmox inventory to confirm all base VMs exist and are at the correct IP address.
+# if not, create correct VMs

@@ -1,0 +1,9 @@
+---
+- name: Check if Proxmox user exists
+  command: "pveum user list --output-format=json"
+  register: userlist
+  changed_when: false
+
+- name: Parse userlist and Create Proxmox user if not exists
+  include_tasks: create-user.yml
+  loop: "{{ user_list }}"

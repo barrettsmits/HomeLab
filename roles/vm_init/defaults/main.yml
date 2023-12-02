@@ -1,0 +1,18 @@
+---
+# defaults file for prometheus
+
+api_host: "proxmox"
+api_user: "ansibleadmin@pam"
+api_password: "{{ vault_api_password }}"
+var_api_token_id: "{{ vault_api_token_id }}"
+var_api_token_secret: "{{ vault_api_token_secret }}"
+proxmox_node: "proxmox"
+prometheus_vmid: 2001
+vm_storage: "local-lvm"
+
+searchdomain: "prometheus"
+gateway_ip: 192.168.1.1
+vm_ip: 192.168.1.58
+vm_dns: 8.8.8.8
+prometheus_version: "2.48.0"
+env: "dev"

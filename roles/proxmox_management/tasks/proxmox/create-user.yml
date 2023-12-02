@@ -1,0 +1,25 @@
+---
+
+- name: Set fact for user existence
+  set_fact:
+    user_json: "{{ userlist.stdout | from_json }}"
+  ignore_errors: true
+
+- name: Check if {{ item.username }} exists
+  set_fact:
+    user_exists: "{{ user_json | json_query(user_query) | length > 0 }}"
+  vars:
+    user_query: "[?userid=='{{ item.username }}@{{ user_realm }}']"
+
+- name: Ensure the Proxmox system user exists
+  ansible.builtin.user:
+    name: "{{ item.username }}"
+    password: "{{ item.password | password_hash('sha512') }}"
+    shell: /bin/bash
+    groups: "sudo"
+    append: true
+  when: not user_exists
+
+- name: Create Proxmox user if does not exists
+  command: "pveum useradd {{ item.username }}@{{ user_realm }} --password {{ item.password }} --email {{ item.email }}"
+  when: not user_exists
