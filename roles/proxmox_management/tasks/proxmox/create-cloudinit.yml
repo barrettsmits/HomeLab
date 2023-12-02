@@ -42,7 +42,7 @@
         vmid: 9999
         state: absent
 
-    # Ansible Community General proxmox_kvm didn't do everything I needed. 
+    # Ansible Community General proxmox_kvm didn't do everything I needed.
     - name: Step-by-step VM creation with qm commands
       ansible.builtin.shell: |
         qm create 9999 --memory 2048 --net0 virtio,bridge=vmbr0

@@ -8,8 +8,8 @@
   roles:
     - proxmox_management
     - vm_init
-    #- k3s-init
-    #- portainer_init
+    # - k3s-init
+    # - portainer_init
   vars:
     ansible_become_pass: "{{ become_password }}"
 
@@ -18,7 +18,7 @@
   become: true
   vars_files:
     - ~/secrets/creds.yml
-  # no_log: true
+  no_log: true
   tags:
     - monitoring
     - observer
@@ -26,6 +26,10 @@
     - prometheus_prod
   vars:
     ansible_become_pass: "{{ become_password }}"
+
+## TODO
+# use proxmox inventory to confirm all base VMs exist and are at the correct IP address.
+# if not, create correct VMs
 
 - name: Install Observability stack
   hosts: all:!Proxmox
@@ -39,7 +43,3 @@
     - observibility
   vars:
     ansible_become_pass: "{{ become_password }}"
-
-# # TODO
-# use proxmox inventory to confirm all base VMs exist and are at the correct IP address.
-# if not, create correct VMs

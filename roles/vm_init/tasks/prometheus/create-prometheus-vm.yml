@@ -29,8 +29,8 @@
     agent: 1
     ipconfig:
       ipconfig0: 'ip={{ vm_ip }}/24,gw={{ gateway_ip }}'
-# searchdomain: "{{ prom_vm_search_domain }}"
-# nameserver: "{{ vm_dns }}"
+    # searchdomain: "{{ prom_vm_search_domain }}"
+    # nameserver: "{{ vm_dns }}"
     update: true
     sshkeys: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
     timeout: 300

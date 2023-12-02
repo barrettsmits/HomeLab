@@ -81,6 +81,6 @@
       - alertmanager-data:/data
       - /srv/alertmanager:/config
     command: >
-      --config.file=/config/alertmanager.yml 
+      --config.file=/config/alertmanager.yml
       --log.level=debug
     published_ports: "9093:9093"
