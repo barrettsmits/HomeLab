@@ -1,0 +1,26 @@
+---
+# vars file for proxmox_management
+
+packages:
+  - python3-pip
+  - python3
+  - build-essential
+
+public_keys: "{{ ssh_pubkey }}"
+api_host: "proxmox"
+api_user: "ansibleadmin@pam"
+var_api_token_id: "{{ vault_api_token_id }}"
+var_api_token_secret: "{{ vault_api_token_secret }}"
+node_target: "proxmox"
+img_download_version: "jammy"
+img_target_name: "jammy-server-cloudimg-amd64"
+img_source_url: "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+img_target_path: "~/"
+iso_target_path: "{{img_target_path}}{{img_target_name}}.qcow2"
+storage_target: "local-lvm"
+vm_defs:
+  - id: 2001
+    name: "cloudimage-base"
+    nets:
+      - id: 0
+        bridge: "vmbr0"
