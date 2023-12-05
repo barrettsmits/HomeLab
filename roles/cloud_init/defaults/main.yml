@@ -1,0 +1,13 @@
+---
+# defaults file for cloud_init
+
+force_download: false
+public_keys: "{{ ssh_pubkey }}"
+node_target: "proxmox"
+img_download_version: "jammy"
+img_target_name: "jammy-server-cloudimg-amd64"
+img_source_url: "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+img_target_path: "/tmp"
+img_download_target_path: "/tmp"
+storage_target: "LVM-Prime"
+template_vmid: 9999

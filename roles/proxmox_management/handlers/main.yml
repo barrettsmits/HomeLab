@@ -1,2 +1,7 @@
 ---
 # handlers file for proxmox_management
+
+- name: restart pveproxy
+  service:
+    name: pveproxy
+    state: restarted

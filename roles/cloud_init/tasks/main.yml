@@ -1,8 +1,9 @@
 ---
+# tasks file for cloud_init
 
 - find:
     paths: "{{img_target_path}}"
-    pattern: "{{ img_target_name }}.img"
+    pattern: "{{ img_target_name }}-1.img"
     age: -7d
   register: file_data
 
@@ -17,9 +18,9 @@
 
     - name: Virt-customize the image
       ansible.builtin.shell: |
-        pwd
         cd {{ img_download_target_path }}
-        virt-customize -a {{ img_target_name }}.img --install qemu-guest-agent, python3-pip
+        virt-customize -a {{ img_target_name }}.img --install qemu-guest-agent
+        virt-customize -a {{ img_target_name }}.img --install python3
         virt-customize -a {{ img_target_name }}.img --run-command 'systemctl enable qemu-guest-agent'
         virt-customize -a {{ img_target_name }}.img --run-command 'systemctl stop qemu-guest-agent'
       delegate_to: 127.0.0.1
@@ -27,8 +28,8 @@
     - name: Copy downloaded image to proxmox
       ansible.builtin.copy:
         src: "{{ img_download_target_path }}/{{ img_target_name }}.img"
-        dest: "{{img_target_path}}/{{ img_target_name }}.img"
-      delegate_to: 127.0.0.1
+        dest: "{{img_target_path}}/{{ img_target_name }}-1.img"
+        force: true
   when: not file_data.files | length > 0 or force_download
 
 - name: Replace cloud base image.
@@ -39,18 +40,23 @@
         api_user: "{{ api_user }}"
         api_token_id: "{{ vault_api_token_id}}"
         api_token_secret: "{{ vault_api_token_secret }}"
-        vmid: 9999
+        vmid: "{{ template_vmid }}"
         state: absent
 
     # Ansible Community General proxmox_kvm didn't do everything I needed.
     - name: Step-by-step VM creation with qm commands
       ansible.builtin.shell: |
-        qm create 9999 --memory 2048 --net0 virtio,bridge=vmbr0
-        qm importdisk 9999 {{ img_target_name }}.img {{ storage_target }}
-        qm set 9999 --scsihw virtio-scsi-pci --scsi0 {{ storage_target }}:vm-9999-disk-0
-        qm set 9999 --ide2 {{ storage_target }}:cloudinit
-        qm set 9999 --boot c --bootdisk scsi0
-        qm set 9999 --serial0 socket --vga serial0
+        cd /tmp/
+        qm create {{ template_vmid }} --memory 2048 --net0 virtio,bridge=vmbr0
+        qm importdisk {{ template_vmid }} {{ img_target_name }}-1.img {{ storage_target }}
+        qm set {{ template_vmid }} --scsihw virtio-scsi-pci --scsi0 {{ storage_target }}:vm-{{ template_vmid }}-disk-0
+        qm set {{ template_vmid }} --ide2 {{ storage_target }}:cloudinit
+        qm set {{ template_vmid }} --boot c --bootdisk scsi0
+        qm set {{ template_vmid }} --serial0 socket --vga serial0
+    
+    - name: 3 second pause
+      pause:
+        seconds: 3
 
     - name: Add Name, User ID, Password,and agent to new VM
       community.general.proxmox_kvm:
@@ -59,13 +65,17 @@
         api_token_id: "{{ vault_api_token_id }}"
         api_token_secret: "{{ vault_api_token_secret }}"
         name: "CloudInitBase"
-        vmid: 9999
+        vmid: "{{ template_vmid }}"
         node: "{{ node_target }}"
         agent: "enabled=1,fstrim_cloned_disks=1"
-        citype: nocloud
+        citype: "nocloud"
         ciuser: "ansibleadmin"
         cipassword: "{{ proxmox_ci_password }}"
         update: true
+    
+    - name: 3 second pause
+      pause:
+        seconds: 3
 
     - name: Set SSH keys
       community.general.proxmox_kvm:
@@ -74,7 +84,7 @@
         api_token_id: "{{ vault_api_token_id }}"
         api_token_secret: "{{ vault_api_token_secret }}"
         node: "{{ node_target }}"
-        vmid: 9999
+        vmid: "{{ template_vmid }}"
         sshkeys: "{{ public_keys }}"
         update: true
 
@@ -84,13 +94,17 @@
         api_user: "{{ api_user }}"
         api_token_id: "{{ vault_api_token_id }}"
         api_token_secret: "{{ vault_api_token_secret }}"
-        name: "CloudInitBase"
-        vmid: 9999
+        vmid: "{{ template_vmid }}"
         disk: scsi0
-        storage: local-lvm
-        size: 10G
+        storage: "{{ storage_target }}"
+        size: +5G
         state: resized
 
     - name: Convert to template
       ansible.builtin.shell:
-        cmd: "qm template 9999"
+        cmd: "qm template {{ template_vmid }}"
+
+    - name: Wait for server to update
+      wait_for:
+        timeout: 30
+    
