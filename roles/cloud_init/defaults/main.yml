@@ -1,0 +1,14 @@
+---
+# defaults file for cloud_init
+
+var_force_download: false
+var_public_keys: "{{ vault_ssh_pubkey }}" 
+var_node_target: "proxmox"
+var_img_download_version: "jammy"
+var_img_target_name: "jammy-server-cloudimg-amd64"
+var_img_source_url: "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+var_img_target_path: "/tmp"
+var_img_download_target_path: "/tmp"
+var_storage_target: "LVM-Prime" #Change this to Match existing storage on Proxmox.
+var_disksize: "10G"
+var_template_vmid: 9999

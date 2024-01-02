@@ -1,0 +1,13 @@
+route:
+  receiver: "mail"
+  repeat_interval: 4h
+  group_by: [ alertname ]
+
+receivers:
+  - name: "mail"
+    email_configs:
+      - smarthost: "outlook.office365.com:587"
+        auth_username: "barrett.smits+alert@gmail.com"
+        auth_password: "{{ alertmanager_smtp_password }}"
+        from: "barrett.smits+alert@gmail.com"
+        to: "barrett.smits+alert@gmail.com"

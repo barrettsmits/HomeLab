@@ -1,17 +1,23 @@
 ---
 - name: Homelab base setup
-  hosts: Proxmox
+  hosts: proxmox_prd
   become: true
+  any_errors_fatal: true # stop if anything is wrong
   vars_files:
     - ~/secrets/creds.yml
-  no_log: true
+  no_log: false # Passwords stored in vault may display in logs, this should be set to true to protect user's initial data.  
   roles:
     - proxmox_management
+    - cloud_init
     - vm_init
     #- k3s-init
     #- portainer_init
   vars:
     ansible_become_pass: "{{ become_password }}"
+    var_api_host: "proxmox"
+    var_api_user: "ansibleadmin@pam"
+    var_api_token_id: "{{ vault_api_token_id }}"
+    var_api_token_secret: "{{ vault_api_token_secret }}"
 
 - name: Install Observability stack (observer)
   hosts: Prometheus
@@ -23,12 +29,12 @@
     - monitoring
     - observer
   roles:
-    - prometheus_prod
+    - prometheus_setup
   vars:
     ansible_become_pass: "{{ become_password }}"
 
 - name: Install Observability stack
-  hosts: all:!Proxmox
+  hosts: all:!proxmox_prd
   become: true
   vars_files:
     - ~/secrets/creds.yml

@@ -1,0 +1,9 @@
+---
+- name: Create group 'admin' in Proxmox
+  ansible.builtin.command:
+    cmd: "pveum groupadd admin"
+  ignore_errors: yes
+
+- name: Assign 'Administrator' role to 'ansible' group on '/' path
+  ansible.builtin.command:
+    cmd: "pveum aclmod / -group admin -role Administrator"

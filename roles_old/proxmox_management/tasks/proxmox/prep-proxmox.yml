@@ -1,0 +1,92 @@
+---
+- name: Ensure Proxmox VE is installed
+  apt:
+    name: proxmox-ve
+    state: present
+
+- name: Ensure Proxmox services are running
+  service:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+  loop:
+    - pve-cluster
+    - pvedaemon
+    - pveproxy
+
+- name: Ensure enterprise repo file is not present
+  file:
+    path: /etc/apt/sources.list.d/pve-enterprise.list
+    state: absent
+
+- name: Ensure ceph repo file is not present
+  file:
+    path: /etc/apt/sources.list.d/ceph.list
+    state: absent
+
+- name: Remove pve subscription repos
+  apt_repository:
+    repo: >
+      deb https://enterprise.proxmox.com/debian/pve
+      bookworm pve-enterprise
+    state: absent
+
+- name: Remove ceph subscription repos
+  apt_repository:
+    repo: >
+      deb http://download.proxmox.com/debian/ceph-reef 
+      bookworm enterprise
+    state: absent
+
+- name: Switch to community repos
+  apt_repository:
+    repo: >
+      deb http://download.proxmox.com/debian/pve
+      bookworm pve-no-subscription
+    state: present
+
+- name: Switch to community repos
+  apt_repository:
+    repo: >
+      deb http://download.proxmox.com/debian/ceph-reef 
+      bookworm no-subscription
+    state: present
+
+- name: Ensure Proxmox is updated
+  apt:
+    update_cache: true
+    upgrade: true
+
+- name: Update all packages to the latest version
+  apt:
+    upgrade: dist
+
+- name: Install apt packages
+  apt:
+    name: "{{ packages }}"
+    state: latest
+
+- name: pip update pip
+  pip:
+    name: pip
+    state: latest
+    extra_args: --break-system-packages
+
+- name: Install dependencies
+  pip:
+    name: "{{ item }}"
+    state: latest
+    extra_args: --break-system-packages
+  loop:
+    - virtualenv
+    - proxmoxer
+    - passlib
+
+# # credit: https://johnscs.com/remove-proxmox51-subscription-notice/ & https://github.com/foundObjects/pve-nag-buster
+# - name: Modify line in file to remove nag message
+#   replace:
+#     path: /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+#     regexp: 'res[\s\n]*\.data\.status\.toLowerCase\(\) !== .active.'
+#     replace: "false"
+#     backup: yes
+#   notify: restart pveproxy

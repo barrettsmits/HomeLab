@@ -1,76 +1,124 @@
 ---
-- name: Clone the CloudInitBase template to a new VM
-  community.general.proxmox_kvm:
-    api_user: "{{ api_user }}"
-    api_password: "{{ api_password }}"
-    api_host: "{{ api_host }}"
-    node: "{{ proxmox_node }}"
-    clone: CloudInitBase
-    newid: "{{ prometheus_vmid }}"
-    name: "Prometheus-{{ env }}"
-    full: true
-    storage: "{{ vm_storage }}"
-    format: qcow2
-    state: present
-    citype: "nocloud"
-    timeout: 500
+# - name: Start the VM
+#   community.general.proxmox_kvm:
+#     api_host: "{{ api_host }}"
+#     api_user: "{{ api_user }}"
+#     api_token_id: "{{ dev_vault_api_token_id}}"
+#     api_token_secret: "{{ dev_vault_api_token_secret }}"
+#     vmid: "{{ prometheus_vmid }}"
+#     state: current
+#   ignore_errors: true
+#   register: state
 
-- name: Set VM hardware and cloud-init configurations
-  community.general.proxmox_kvm:
-    api_user: "{{ api_user }}"
-    api_password: "{{ api_password }}"
-    api_host: "{{ api_host }}"
-    vmid: "{{ prometheus_vmid }}"
-    node: "{{ proxmox_node }}"
-    memory: 4096
-    cores: 2
-    sockets: 1
-    onboot: true
-    agent: 1
-    ipconfig:
-      ipconfig0: 'ip={{ vm_ip }}/24,gw={{ gateway_ip }}'
-# searchdomain: "{{ prom_vm_search_domain }}"
-# nameserver: "{{ vm_dns }}"
-    update: true
-    sshkeys: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
-    timeout: 300
+# - name: test SSH connection
+#   wait_for:
+#     host: "{{ vm_ip }}"
+#     port: 22
+#     timeout: 10
+#   ignore_errors: true
+#   register: ssh
 
-- name: Update existing disk size
-  community.general.proxmox_disk:
-    api_user: "{{ api_user }}"
-    api_password: "{{ api_password }}"
-    api_host: "{{ api_host }}"
-    vmid: "{{ prometheus_vmid }}"
-    disk: scsi0
-    size: 10G
-    state: resized
+- name: If current state of Prometheus VM is not Started 
+  block:
+    - name: Clone the CloudInitBase template to a new VM
+      community.general.proxmox_kvm:
+        api_host: "{{ var_api_host }}"
+        api_user: "{{ var_api_user }}"
+        api_token_id: "{{ var_api_token_id}}"
+        api_token_secret: "{{ var_api_token_secret }}"
+        node: "{{ var_proxmox_node }}"
+        clone:  CloudInitBase
+        newid: "{{ var_prometheus_vmid }}"
+        name: "Prometheus-{{ var_env }}"
+        full: true
+        storage: "{{ var_vm_storage }}"
+        format: qcow2
+        state: present
+        citype: "nocloud"
+        timeout: 500
 
-- name: Start the VM
-  community.general.proxmox_kvm:
-    api_user: "{{ api_user }}"
-    api_password: "{{ api_password }}"
-    api_host: "{{ api_host }}"
-    vmid: "{{ prometheus_vmid }}"
-    state: started
-  register: result
+    - name: Set VM hardware and cloud-init configurations
+      community.general.proxmox_kvm:
+        api_host: "{{ var_api_host }}"
+        api_user: "{{ var_api_user }}"
+        api_token_id: "{{ var_api_token_id}}"
+        api_token_secret: "{{ var_api_token_secret }}"
+        vmid: "{{ var_prometheus_vmid }}"
+        node: "{{ var_proxmox_node }}"
+        memory: 4096
+        cores: 2
+        sockets: 1
+        onboot: true
+        ipconfig:
+          ipconfig0: 'ip={{ var_vm_ip }}/24,gw={{ var_gateway_ip }}'
+        # searchdomain: "{{ var_prom_vm_search_domain }}"
+        # nameserver: "{{ var_vm_dns }}"
+        update: true
+        sshkeys: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+        timeout: 300
 
-- name: Sleep for 600 seconds and continue with play
-  ansible.builtin.wait_for:
-    timeout: 600
-  when: result is changed
+    - name: Update existing disk size
+      community.general.proxmox_disk:
+        api_host: "{{ var_api_host }}"
+        api_user: "{{ var_api_user }}"
+        api_token_id: "{{ var_api_token_id}}"
+        api_token_secret: "{{ var_api_token_secret }}"
+        vmid: "{{ var_prometheus_vmid }}"
+        disk: scsi0
+        size: 10G
+        state: present
 
-- name: Wait for SSH to come up
-  wait_for:
-    host: "{{ vm_ip }}"
-    port: 22
-  register: vm
-  until: vm is not failed
-  retries: 10
+    - name: Start the VM
+      community.general.proxmox_kvm:
+        api_host: "{{ var_api_host }}"
+        api_user: "{{ var_api_user }}"
+        api_token_id: "{{ var_api_token_id}}"
+        api_token_secret: "{{ var_api_token_secret }}"
+        vmid: "{{ var_prometheus_vmid }}"
+        state: started
+      register: result
 
+    - name: Sleep for 600 seconds and continue with play
+      ansible.builtin.wait_for:
+        timeout: 600
+      when: result is changed
+
+    # - name: Restart the VM
+    #   community.general.proxmox_kvm:
+    #     api_host: "{{ api_host }}"
+    #     api_user: "{{ api_user }}"
+    #     api_token_id: "{{ dev_vault_api_token_id}}"
+    #     api_token_secret: "{{ dev_vault_api_token_secret }}"
+    #     vmid: "{{ prometheus_vmid }}"
+    #     state: restarted
+    #   when: result is changed
+
+    # - name: Wait for DNS propagation
+    #   delegate_to: localhost
+    #   when: not inventory_hostname is ansible.utils.resolvable
+    #   ansible.builtin.debug:
+    #     msg: Waiting...
+    #   until: inventory_hostname is ansible.utils.resolvable
+    #   retries: 900
+    #   delay: 10
+
+    - name: Wait for SSH to come up
+      wait_for:
+        host: "{{ var_vm_ip }}"
+        port: 22
+        state: started
+        delay: 0
+        timeout: 60
+      ignore_errors: true
+      register: vm
+      until: vm is not failed
+      retries: 10
+  # when: state is not started
 # # Assuming you have a playbook or role for installing Prometheus
 # - name: Install Prometheus
 #   include_role:
-#     name: prometheus_setup
+#     name: prometheus_prod
 #   vars:
 #     prometheus_version: "2.26.0" # Specify the version you want to install
 #   delegate_to: "{{ vm_ip }}"
+

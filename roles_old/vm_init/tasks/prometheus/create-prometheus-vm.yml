@@ -1,0 +1,76 @@
+---
+- name: Clone the CloudInitBase template to a new VM
+  community.general.proxmox_kvm:
+    api_user: "{{ api_user }}"
+    api_password: "{{ api_password }}"
+    api_host: "{{ api_host }}"
+    node: "{{ proxmox_node }}"
+    clone: CloudInitBase
+    newid: "{{ prometheus_vmid }}"
+    name: "Prometheus-{{ env }}"
+    full: true
+    storage: "{{ vm_storage }}"
+    format: qcow2
+    state: present
+    citype: "nocloud"
+    timeout: 500
+
+- name: Set VM hardware and cloud-init configurations
+  community.general.proxmox_kvm:
+    api_user: "{{ api_user }}"
+    api_password: "{{ api_password }}"
+    api_host: "{{ api_host }}"
+    vmid: "{{ prometheus_vmid }}"
+    node: "{{ proxmox_node }}"
+    memory: 4096
+    cores: 2
+    sockets: 1
+    onboot: true
+    agent: 1
+    ipconfig:
+      ipconfig0: 'ip={{ vm_ip }}/24,gw={{ gateway_ip }}'
+# searchdomain: "{{ prom_vm_search_domain }}"
+# nameserver: "{{ vm_dns }}"
+    update: true
+    sshkeys: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+    timeout: 300
+
+- name: Update existing disk size
+  community.general.proxmox_disk:
+    api_user: "{{ api_user }}"
+    api_password: "{{ api_password }}"
+    api_host: "{{ api_host }}"
+    vmid: "{{ prometheus_vmid }}"
+    disk: scsi0
+    size: 10G
+    state: resized
+
+- name: Start the VM
+  community.general.proxmox_kvm:
+    api_user: "{{ api_user }}"
+    api_password: "{{ api_password }}"
+    api_host: "{{ api_host }}"
+    vmid: "{{ prometheus_vmid }}"
+    state: started
+  register: result
+
+- name: Sleep for 600 seconds and continue with play
+  ansible.builtin.wait_for:
+    timeout: 600
+  when: result is changed
+
+- name: Wait for SSH to come up
+  wait_for:
+    host: "{{ vm_ip }}"
+    port: 22
+  register: vm
+  until: vm is not failed
+  retries: 10
+
+# # Assuming you have a playbook or role for installing Prometheus
+# - name: Install Prometheus
+#   include_role:
+#     name: prometheus_setup
+#   vars:
+#     prometheus_version: "2.26.0" # Specify the version you want to install
+#   delegate_to: "{{ vm_ip }}"
