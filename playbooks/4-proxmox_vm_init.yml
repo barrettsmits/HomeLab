@@ -1,0 +1,16 @@
+---
+- name: VM initiation
+  hosts: proxmox_prd
+  become: true
+  any_errors_fatal: true # stop if anything is wrong
+  vars_files:
+    - ~/secrets/creds.yml
+  no_log: true # Passwords stored in vault may display in logs.
+  roles:
+    - ../roles/vm_init
+  vars:
+    ansible_become_pass: "{{ become_password }}"
+    var_api_host: proxmox
+    var_api_user: root@pam
+    var_api_token_id: "{{ vault_api_token_id }}"
+    var_api_token_secret: "{{ vault_api_token_secret }}"

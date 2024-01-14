@@ -1,0 +1,72 @@
+---
+# Playbook creates a API token on Proxmox (Does not )
+- name: Manage API Tokens in Proxmox
+  hosts: localhost
+  gather_facts: no
+  vars_files:
+    - ~/secrets/creds.yml
+  vars:
+    proxmox_host: "192.168.1.205:8006"
+    proxmox_user: "root@pam"
+    proxmox_password: "{{ vault_api_password }}"
+    target_user: "ansibleadmin@pam"
+    new_token_name: "ansible"
+  tasks:
+    - name: Log in to Proxmox and get ticket
+      uri:
+        url: "https://{{ proxmox_host }}/api2/json/access/ticket"
+        method: POST
+        body_format: form-urlencoded
+        body:
+          username: "{{ proxmox_user }}"
+          password: "{{ proxmox_password }}"
+        validate_certs: no
+      register: login_response
+
+    - name: List existing tokens for the user
+      uri:
+        url: "https://{{ proxmox_host }}/api2/json/access/users/{{ target_user }}/token"
+        method: GET
+        headers:
+          Cookie: "PVEAuthCookie={{ login_response.json.data.ticket }}"
+        validate_certs: no
+      register: existing_tokens
+
+    - name: Check if the desired token already exists
+      set_fact:
+        token_exists: "{{ existing_tokens.json.data | json_query(query) | length > 0 }}"
+      vars:
+        query: "[?tokenid=='{{ new_token_name }}']"
+
+    - name: Create API Token if it does not exist
+      uri:
+        url: "https://{{ proxmox_host }}/api2/json/access/users/{{ target_user }}/token/{{ new_token_name }}"
+        method: POST
+        headers:
+          CSRFPreventionToken: "{{ login_response.json.data.CSRFPreventionToken }}"
+          Cookie: "PVEAuthCookie={{ login_response.json.data.ticket }}"
+        validate_certs: no
+        status_code: [200, 201]
+      when: not token_exists
+      register: token_creation_response
+    
+    - name: Assign Administrator role to API Token
+      uri:
+        url: "https://{{ proxmox_host }}/api2/json/access/acl"
+        method: PUT
+        headers:
+          CSRFPreventionToken: "{{ login_response.json.data.CSRFPreventionToken }}"
+          Cookie: "PVEAuthCookie={{ login_response.json.data.ticket }}"
+        body_format: json
+        body:
+          path: "/"
+          roles: "Administrator"
+          tokens: "{{ target_user }}!{{ new_token_name }}"
+        validate_certs: no
+
+    - name: Display API Token Information if created
+      debug:
+        msg: |
+          Save this output in a secure place, it will not be displayed again
+          {{ token_creation_response.json.data }}
+      when: not token_exists

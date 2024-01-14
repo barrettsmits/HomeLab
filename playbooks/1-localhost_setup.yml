@@ -1,0 +1,38 @@
+---
+# Configure Localhost for the subsequent playbooks. 
+- name: Update Ansible Host with required settings. 
+  hosts: localhost
+  gather_facts: no
+  become: true
+  vars_files:
+    - ~/secrets/creds.yml
+  vars:
+    apt_packages:
+      - python3-pip
+      - python3
+      - build-essential
+      - libguestfs-tools
+    pip_packages:
+      - pyyaml
+      - jinja2
+      - httplib2
+      - paramiko
+      - cryptography
+      - ansible-lint
+      - passlib
+      - bcrypt
+      - lxml
+      - simplejson
+      - pywinrm
+  tasks:   
+    - name: Install required apt packages
+      apt:
+        name: "{{ apt_packages }}"
+        state: present
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install pip dependencies
+      pip:
+        name: "{{ pip_packages }}"
+        state: present

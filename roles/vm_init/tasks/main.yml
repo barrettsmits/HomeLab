@@ -1,6 +1,10 @@
 ---
 # tasks file for prometheus
 
-- name: Create Prometheus VM
+# - name: Create Prometheus VM
+#   ansible.builtin.include_tasks:
+#     file: prometheus/create-prometheus-vm.yml
+
+- name: Create multiple VMs
   ansible.builtin.include_tasks:
-    file: prometheus/create-prometheus-vm.yml
+    file: vm_create/create-vm-group.yml

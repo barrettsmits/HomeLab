@@ -2,19 +2,19 @@
 # defaults file for proxmox_management
 
 # Prep-Proxmox:
-packages:
-    - python3-pip
-    - python3
-    - build-essential
+proxmox_management_packages:
+  - python3-pip
+  - python3
+  - build-essential
 
-user_realm: "pam"
-user_list:
-    - username: bsmits
-      email: barrett.smits@gmail.com
-      password: "{{ vault_bsmits_password }}"
-    - username: dkasten
-      email: kastendl@gmail.com
-      password: "{{ vault_dkasten_password }}"
-    - username: ansibleadmin
-      email: barrett.smits+ansibleadmin@gmail.com
-      password: "{{ vault_ansible_password }}"
+proxmox_management_user_realm: pam
+proxmox_management_user_list:
+  - username: bsmits
+    email: barrett.smits@gmail.com
+    password: "{{ vault_bsmits_password }}"
+  - username: dkasten
+    email: kastendl@gmail.com
+    password: "{{ vault_dkasten_password }}"
+  - username: ansibleadmin
+    email: barrett.smits+ansibleadmin@gmail.com
+    password: "{{ vault_ansible_password }}"

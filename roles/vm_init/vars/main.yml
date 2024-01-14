@@ -1,42 +1,55 @@
 ---
 # vars file for prometheus
+# vm_init_clone: "{{ item.value.template }}"
+# vm_init_newid: "{{ item.value.vmid }}"
+# vm_init_ull: "{{ item.value.full }}"
+# vm_init_name: "{{ item.key }}"
+# vm_init_cores: "{{ item.value.cores | default(defaults.cores) }}"
+# vm_init_memory: "{{ item.value.memory_size | default(defaults.memory_size) }}"
+# vm_init_balloon: "{{ item.value.balloon | default(defaults.balloon) }}"
+# vm_init_vga: serial0
+# vm_init_ostype: "{{ item.value.ostype | default(defaults.ostype) }}"
+# vm_init_cpu: "{{ item.value.cpu | default(defaults.cpu) }}"
+# vm_init_vcpus: "{{ item.value.vcpus | default(defaults.vcpus) }}"
+# vm_init_bootdisk: "{{ item.value.bootdisk | default(defaults.bootdisk) }}"
+# vm_init_net: "{{ item.value.net | default(defaults.net) }}"
+# vm_init_ipconfig: "{{ item.value.ipconfig | default(defaults.ipconfig) }}"
+# vm_init_format: unspecified
+# vm_init_virtio: "{{ item.value.virtio | default(defaults.virtio) }}"
+# vm_init_scsihw: "{{ item.value.scsihw | default(defaults.scsihw) }}"
+
+vm_init_list:
+  - name: prometheus-dev
+    vmid: 1000
+    full: true
+    net: {"net0":"virtio=32:5F:B4:35:16:0F,bridge=vmbr0"}
+    scsi: {"scsi0":"local-lvm:20"}
+    bootdisk: 'scsi0'
+    cores: 1
+    memory: 1024
+    balloon: 512
+    vga: vmware
+  - name: portainer-dev
+    vmid: 1001
+    net: {"net0":"virtio=32:5F:B4:37:16:1F,bridge=vmbr0"}
+    scsi: {"scsi0":"local-lvm:20"}
+    bootdisk: 'scsi0'
+    cores: 4
+    memory: 4096
 
 
-
-
-clone: "{{ item.value.template }}"
-newid: "{{ item.value.vmid }}"
-full: "{{ item.value.full }}"
-name: "{{ item.key }}"
-cores: '{{ item.value.cores | default(defaults.cores) }}'
-memory: '{{ item.value.memory_size | default(defaults.memory_size) }}'
-balloon: '{{ item.value.balloon | default(defaults.balloon) }}'
-vga: 'serial0'
-ostype: '{{ item.value.ostype | default(defaults.ostype) }}'
-cpu: '{{ item.value.cpu | default(defaults.cpu) }}'
-vcpus: '{{ item.value.vcpus | default(defaults.vcpus) }}'
-bootdisk: '{{ item.value.bootdisk | default(defaults.bootdisk) }}'
-net: '{{ item.value.net | default(defaults.net) }}'
-ipconfig: '{{ item.value.ipconfig | default(defaults.ipconfig) }}'
-format: 'unspecified'
-virtio: '{{ item.value.virtio | default(defaults.virtio) }}'
-scsihw: '{{ item.value.scsihw | default(defaults.scsihw) }}'
-
-
-
-vm_list:
-   - name: vm1
-     net: {"net0":"virtio=32:5F:B4:35:16:0F,bridge=vmbr0"}
-     scsi: {"scsi0":"local-lvm:8,ssd=1"}
-     bootdisk: 'scsi0'
-     cores: 1
-     memory: 1024
-     balloon: 512
-     vga: vmware
-   - name: vm2
-     net: {"net0":"virtio=32:5F:B4:37:16:0F,bridge=vmbr1"}
-     scsi: {"scsi0":"local-lvm:16,ssd=1"}
-     bootdisk: 'scsi0'
-     cores: 4
-     memory: 4096
-     protection: yes
+      # full: "{{ item.value.full }}"
+      # #name: "{{ item.key }}"
+      # cores: '{{ item.value.cores | default(defaults.cores) }}'
+      # memory: '{{ item.value.memory_size | default(defaults.memory_size) }}'
+      # balloon: '{{ item.value.balloon | default(defaults.balloon) }}'
+      # vga: 'serial0'
+      # ostype: '{{ item.value.ostype | default(defaults.ostype) }}'
+      # cpu: '{{ item.value.cpu | default(defaults.cpu) }}'
+      # vcpus: '{{ item.value.vcpus | default(defaults.vcpus) }}'
+      # bootdisk: "scsi0"
+      # net: '{{ item.value.net | default(defaults.net) }}'
+      # ipconfig: '{{ item.value.ipconfig | default(defaults.ipconfig) }}'
+      # format: 'unspecified'
+      # virtio: '{{ item.value.virtio | default(defaults.virtio) }}'
+      # scsihw: '{{ item.value.scsihw | default(defaults.scsihw) }}'

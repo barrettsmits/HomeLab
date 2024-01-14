@@ -1,22 +1,98 @@
 ---
 # defaults file for prometheus
 
-# Connections
-var_api_host: "proxmox"
-# var_api_user: "ansibleadmin@pam"
-# var_api_password: "{{ vault_api_password }}"
-# var_api_token_id: "{{ vault_api_token_id }}"
-# var_api_token_secret: "{{ vault_api_token_secret }}"
-var_proxmox_node: "proxmox"
 
-var_prometheus_vmid: 2001
-var_vm_storage: "local-lvm"
+# TL;DR variables for quick use
+global_api_host: '192.168.1.205:8006'
+global_description: "Created with Ansible on {{ ansible_date_time.date }}"
+global_node: 'proxmox'
+global_keyboard: 'en-us'
 
-var_searchdomain: "prometheus"
-var_gateway_ip: 192.168.1.1
-var_vm_ip: 192.168.1.158
-var_vm_dns: 8.8.8.8
-var_prometheus_version: "2.48.0"
-var_env: "prd"
-
-
+# Overwrite default variables for all VMs
+global:
+  acpi: 'true'
+  # Enable QEMU Agent, remember to install qemu-guest-agent on VMs 
+  agent: 'true'
+  api_host: "{{ var_api_host }}"
+  api_user: "{{ var_api_user }}"
+  api_token_id: "{{ var_api_token_id }}"
+  api_token_secret: "{{ var_api_token_secret }}"
+  # api_host: '{{ global_api_host }}'
+  # api_password: '{{ credentials.password if credentials.get("password") else lookup("env","PROXMOX_PASSWORD") }}'
+  # api_user: '{{ credentials.username if credentials.get("username") else lookup("env","PROXMOX_USER") }}'
+  # api_token_secret: '{{ credentials.api_token_secret if credentials.get("api_token_secret") else lookup("env","PROXMOX_TOKEN_SECRET") }}'
+  # api_token_id: '{{ credentials.api_token_id if credentials.get("api_token_id") else lookup("env","PROXMOX_TOKEN_ID") }}'
+  args: '-serial unix:/var/run/qemu-server/<vmid>.serial,server,nowait'
+  autostart: 'false'
+  balloon: '0'
+  bios: ''
+  # Boot from disk and network
+  boot: 'cnd'
+  bootdisk: ''
+  clone: ''
+  cores: '1'
+  cpu: 'kvm64'
+  cpulimit: ''
+  cpuunits: '1000'
+  delete: ''
+  description: '{{ global_description }}'
+  digest: ''
+  # Set force to empty value because of a bug
+  force: ''
+  format: 'unspecified'
+  freeze: ''
+  full: ''
+  hostpci: ''
+  # Disable hotplug for 'network', 'disk', 'cpu', 'memory' and 'usb'
+  hotplug: '0'
+  hugepages: ''
+  ide: ''
+  keyboard: '{{ global_keyboard }}'
+  kvm: 'true'
+  localtime: ''
+  lock: ''
+  machine: ''
+  memory: '1024'
+  migrate_downtime: ''
+  migrate_speed: ''
+  name: ''
+  net: ''
+  newid: ''
+  node: '{{ global_node }}'
+  numa: ''
+  numa_enabled: ''
+  onboot: 'true'
+  ostype: 'l26'
+  parallel: ''
+  pool: ''
+  protection: ''
+  # Set behavior to compatibility because of "force" bug
+  proxmox_default_behavior: 'no_defaults'
+  reboot: ''
+  revert: ''
+  sata: ''
+  scsi: ''
+  # virtio-scsi-pci for better performance
+  scsihw: 'virtio-scsi-pci'
+  serial: ''
+  shares: ''
+  skiplock: ''
+  smbios: ''
+  snapname: ''
+  sockets: '1'
+  startdate: ''
+  startup: ''
+  state: ''
+  storage: ''
+  tablet: 'false'
+  target: ''
+  tdf: ''
+  template: 'false'
+  timeout: ''
+  update: ''
+  validate_certs: ''
+  vcpus: ''
+  vga: 'std'
+  virtio: ''
+  vmid: ''
+  watchdog: ''

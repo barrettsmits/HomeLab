@@ -1,48 +1,48 @@
 ---
 - name: Create Folder /srv/prometheus if not exist
-  file:
+  ansible.builtin.file:
     path: /srv/prometheus
-    mode: 0755
+    mode: "0755"
     state: directory
 
 - name: Create Folder /srv/grafana if not exist
-  file:
+  ansible.builtin.file:
     path: /srv/grafana
-    mode: 0755
+    mode: "0755"
     state: directory
 
 - name: Create Folder /srv/alertmanager if not exist
-  file:
+  ansible.builtin.file:
     path: /srv/alertmanager
-    mode: 0755
+    mode: "0755"
     state: directory
 
 - name: Create prometheus configuration file
-  copy:
+  ansible.builtin.copy:
     dest: /srv/prometheus/prometheus.yml
     src: prometheus_main.yml
-    mode: 0644
+    mode: "0644"
 
 - name: Create prometheus alert configuration file
-  copy:
+  ansible.builtin.copy:
     dest: /srv/prometheus/prometheus_alerts_rules.yml
     src: prometheus_alerts_rules.yml
-    mode: 0644
+    mode: "0644"
 
 - name: Create grafana configuration files
-  copy:
+  ansible.builtin.copy:
     dest: /srv/
     src: grafana
-    mode: 0644
+    mode: "0644"
 
 - name: Create alertmanager configuration file
-  template:
+  ansible.builtin.template:
     dest: /srv/alertmanager/alertmanager.yml
     src: alertmanager/alertmanager.j2
-    mode: 0644
+    mode: "0644"
 
 - name: Create Prometheus container
-  docker_container:
+  community.docker.docker_container:
     name: prometheus
     restart_policy: always
     image: prom/prometheus:{{ prometheus_version }}
@@ -56,10 +56,10 @@
       --web.console.libraries=/etc/prometheus/console_libraries
       --web.console.templates=/etc/prometheus/consoles
       --web.enable-lifecycle
-    published_ports: "9090:9090"
+    published_ports: 9090:9090
 
 - name: Create Grafana container
-  docker_container:
+  community.docker.docker_container:
     name: grafana
     restart_policy: always
     image: grafana/grafana:{{ grafana_version }}
@@ -69,11 +69,11 @@
       - /srv/grafana/dashboards:/var/lib/grafana/dashboards
     env:
       GF_AUTH_ANONYMOUS_ENABLED: "true"
-      GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
-    published_ports: "3000:3000"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+    published_ports: 3000:3000
 
 - name: Create Alertmanager container
-  docker_container:
+  community.docker.docker_container:
     name: alertmanager
     restart_policy: always
     image: prom/alertmanager:{{ alertmanager_version }}
@@ -83,4 +83,4 @@
     command: >
       --config.file=/config/alertmanager.yml
       --log.level=debug
-    published_ports: "9093:9093"
+    published_ports: 9093:9093

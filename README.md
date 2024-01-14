@@ -6,7 +6,7 @@ Initiates Proxmox VE setup creating users, permisisons, groups, and an API key i
 
 
 
-Ansible Playbook has a softcheck for localhost requirements, if local requirements not met will prompt to install or end run. 
+Ansible Playbook does not have a check for localhost requirements, if local requirements are not met, run playbook: ./misc_books/localhost_setup.yml
 
 
 

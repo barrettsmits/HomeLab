@@ -1,0 +1,17 @@
+- name: Install Observability stack (observer)
+  hosts: Prometheus
+  become: true
+  vars_files:
+    - ~/secrets/creds.yml
+  # no_log: true
+  tags:
+    - monitoring
+    - observer
+  roles:
+    - prometheus_setup
+  vars:
+    ansible_become_pass: "{{ become_password }}"
+  # post_tasks:
+  #   - name: Allow CT to boot before continuing
+  #     pause:
+  #       seconds: 20
