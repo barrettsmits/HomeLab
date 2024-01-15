@@ -2,7 +2,7 @@
 # handlers file for prometheus
 
 # - name: Sleep for 600 seconds and continue with play
-- name: 300 second pause
+- name: 60 second pause
   ansible.builtin.pause:
-    seconds: 300
-  listen: "pause 300"
+    seconds: 60
+  listen: "pause 60"

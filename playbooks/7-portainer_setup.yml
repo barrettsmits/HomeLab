@@ -6,7 +6,7 @@
     docker_compose_version: "1.28.5"
   tasks:
     # UPGRADE AND INSTALL REQUIRED UBUNTU PACKAGES
-    - name: Set a hostname specifying strategy
+    - name: Set portainers hostname via systemd
       ansible.builtin.hostname:
         name: portainer-prd
         use: systemd

@@ -3,7 +3,7 @@
   become: true
   vars_files:
     - ~/secrets/creds.yml
-  # no_log: true
+  no_log: false
   tags:
     - monitoring
     - observer
@@ -11,7 +11,3 @@
     - prometheus_setup
   vars:
     ansible_become_pass: "{{ become_password }}"
-  # post_tasks:
-  #   - name: Allow CT to boot before continuing
-  #     pause:
-  #       seconds: 20

@@ -20,7 +20,7 @@
 
 vm_init_list:
   - name: prometheus-dev
-    vmid: 1000
+    newid: 1000
     full: true
     net: {"net0":"virtio=32:5F:B4:35:16:0F,bridge=vmbr0"}
     scsi: {"scsi0":"local-lvm:20"}
@@ -30,11 +30,11 @@ vm_init_list:
     balloon: 512
     vga: vmware
   - name: portainer-dev
-    vmid: 1001
+    newid: 1001
     net: {"net0":"virtio=32:5F:B4:37:16:1F,bridge=vmbr0"}
     scsi: {"scsi0":"local-lvm:20"}
     bootdisk: 'scsi0'
-    cores: 4
+    cores: 2
     memory: 4096
 
 
