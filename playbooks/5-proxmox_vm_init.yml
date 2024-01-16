@@ -14,3 +14,6 @@
     var_api_user: root@pam
     var_api_token_id: "{{ vault_api_token_id }}"
     var_api_token_secret: "{{ vault_api_token_secret }}"
+
+# - name: VM configruation update
+#   hosts: 

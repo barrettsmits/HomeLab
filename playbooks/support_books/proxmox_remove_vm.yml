@@ -1,0 +1,37 @@
+---
+- name: Stop and Remove specified VMs
+  hosts: proxmox_prd
+  gather_facts: true
+  vars_files:
+    - ~/secrets/creds.yml
+  vars:
+    var_vmid: 1200
+    var_api_host: proxmox
+    var_api_user: root@pam
+    var_api_token_id: "{{ vault_api_token_id }}"
+    var_api_token_secret: "{{ vault_api_token_secret }}"
+  pre_tasks:
+    - name: "Stop VM {{ var_vmid }}"
+      community.general.proxmox_kvm:
+        api_host: "{{ var_api_host }}"
+        api_user: "{{ var_api_user }}"
+        api_token_id: "{{ var_api_token_id }}"
+        api_token_secret: "{{ var_api_token_secret }}"
+        vmid: "{{ var_vmid }}"
+        state: stopped
+      notify: "pause 15"
+  tasks:
+    - name: "Remove VM {{ var_vmid }}"
+      community.general.proxmox_kvm:
+        api_host: "{{ var_api_host }}"
+        api_user: "{{ var_api_user }}"
+        api_token_id: "{{ var_api_token_id }}"
+        api_token_secret: "{{ var_api_token_secret }}"
+        vmid: "{{ var_vmid }}"
+        state: absent
+
+  handlers:
+    - name: Pause 15
+      ansible.builtin.pause:
+        seconds: 15
+      listen: pause 15

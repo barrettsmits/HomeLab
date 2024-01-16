@@ -14,25 +14,3 @@
     var_api_user: root@pam
     var_api_token_id: "{{ vault_api_token_id }}"
     var_api_token_secret: "{{ vault_api_token_secret }}"
-
-
-
-# - name: Install Observability stack
-#   hosts: prometheus_prd:!proxmox_prd
-#   become: true
-#   vars_files:
-#     - ~/secrets/creds.yml
-#   tags:
-#     - monitoring
-#     - target
-#   roles:
-#     - observibility
-#   vars:
-#     ansible_become_pass: "{{ become_password }}"
-
-# - name: Build Portainer LXC instance
-#   ansible.builtin.import_playbook: ./misc_books/portainer.yml
-
-#   # TODO
-#   # use proxmox inventory to confirm all base VMs exist and are at the correct IP address.
-#   # if not, create correct VMs

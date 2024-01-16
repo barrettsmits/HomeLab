@@ -3,6 +3,7 @@
   ansible.builtin.set_fact:
     user_json: "{{ userlist.stdout | from_json }}"
   ignore_errors: true
+  no_log: true
 
   # register: command_result
   # failed_when: not "'FAILED' in command_result.stderr"

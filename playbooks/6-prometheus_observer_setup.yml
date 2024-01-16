@@ -1,5 +1,5 @@
 - name: Install Observability stack (observer)
-  hosts: Prometheus
+  hosts: prometheus_prd
   become: true
   vars_files:
     - ~/secrets/creds.yml
