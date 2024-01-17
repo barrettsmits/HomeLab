@@ -1,9 +1,8 @@
 ---
-# defaults file for prometheus
+# vm_init  
 
 
 # TL;DR variables for quick use
-global_api_host: '192.168.1.205:8006'
 global_description: "Created with Ansible on {{ ansible_date_time.date }}"
 global_node: 'proxmox'
 global_keyboard: 'en-us'
@@ -15,14 +14,10 @@ global:
   agent: 'true'
   api_host: "{{ var_api_host }}"
   api_user: "{{ var_api_user }}"
+  api_password: "{{ var_api_password }}"
   api_token_id: "{{ var_api_token_id }}"
   api_token_secret: "{{ var_api_token_secret }}"
-  # api_host: '{{ global_api_host }}'
-  # api_password: '{{ credentials.password if credentials.get("password") else lookup("env","PROXMOX_PASSWORD") }}'
-  # api_user: '{{ credentials.username if credentials.get("username") else lookup("env","PROXMOX_USER") }}'
-  # api_token_secret: '{{ credentials.api_token_secret if credentials.get("api_token_secret") else lookup("env","PROXMOX_TOKEN_SECRET") }}'
-  # api_token_id: '{{ credentials.api_token_id if credentials.get("api_token_id") else lookup("env","PROXMOX_TOKEN_ID") }}'
-  args: '-serial unix:/var/run/qemu-server/<vmid>.serial,server,nowait'
+  args: '-serial unix:/var/run/qemu-server/<vmid>.serial,server,nowait' # args must be ran with Root@pam for proxmox. 
   autostart: 'true'
   balloon: '0'
   bios: ''
@@ -64,7 +59,7 @@ global:
   onboot: 'true'
   ostype: 'l26'
   parallel: ''
-  pool: ''
+  pool: 'Test'
   protection: ''
   # Set behavior to compatibility because of "force" bug
   proxmox_default_behavior: 'no_defaults'
@@ -88,6 +83,7 @@ global:
   target: ''
   tdf: ''
   template: 'false'
+  # Time out required as the default of 30 seconds is much to short for a full clone. 
   timeout: '500'
   update: ''
   validate_certs: ''
