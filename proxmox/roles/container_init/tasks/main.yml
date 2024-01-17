@@ -9,7 +9,7 @@
   community.general.proxmox:
     api_host: "{{ container_init_api_host }}"
     api_user: "{{ container_init_api_user }}"
-    api_password: "THINunitynoorange"
+    api_password: "{{ container_init_api_password }}"
     # api_token_id: "{{ container_init_api_token_id }}"
     # api_token_secret: "{{ container_init_api_token_secret }}"
     node: proxmox
