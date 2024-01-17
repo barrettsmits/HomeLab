@@ -1,0 +1,15 @@
+---
+- name: Create new Proxmox VE pool
+  community.general.proxmox_pool:
+    api_host: "{{ var_api_host}}"
+    api_user: "{{ var_api_user }}"
+    api_password: "{{ var_api_password }}"
+    poolid: "{{ item.name }}"
+    comment: "{{ item.comment }}"
+  loop:
+    - name: "Prod"
+      comment: "Production pool"
+    - name: "Dev"
+      comment: "Development pool"
+    - name: "Test"
+      comment: "Test pool"

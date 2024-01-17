@@ -1,0 +1,19 @@
+---
+# defaults file for cloud_init
+
+cloud_init_api_host: "{{ var_api_host }}"
+cloud_init_api_user: "{{ var_api_user }}"
+cloud_init_api_token_id: "{{ var_api_token_id }}"
+cloud_init_api_token_secret: "{{ var_api_token_secret }}"
+cloud_init_force_download: false
+cloud_init_public_keys: "{{ vault_ssh_pubkey }}"
+cloud_init_ci_password: "{{ vault_ci_password }}"
+cloud_init_node_target: proxmox
+cloud_init_img_download_version: jammy
+cloud_init_img_target_name: jammy-server-cloudimg-amd64
+cloud_init_img_source_url: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
+cloud_init_img_target_path: /tmp
+cloud_init_img_download_target_path: /tmp
+cloud_init_storage_target: LVM-Prime # Change this to match existing storage on Proxmox.
+cloud_init_disksize: 10G
+cloud_init_template_vmid: 9999

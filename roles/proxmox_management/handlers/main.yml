@@ -1,2 +1,7 @@
 ---
 # handlers file for proxmox_management
+
+- name: Restart pveproxy
+  ansible.builtin.service:
+    name: pveproxy
+    state: restarted

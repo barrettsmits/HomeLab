@@ -1,0 +1,125 @@
+---
+# tasks file for cloud_init
+
+- name: Register if a recent Cloud-init image exists
+  ansible.builtin.find:
+    paths: "{{ cloud_init_img_target_path }}/"
+    pattern: "{{ cloud_init_img_target_name }}.img"
+    age: -7d
+  register: file_data
+
+- name: If the downloaded image is older than 7 days, redownload it
+  when: not file_data.files | length > 0 or cloud_init_force_download
+  block:
+    - name: Download cloud image
+      ansible.builtin.get_url:
+        url: "{{ cloud_init_img_source_url }}"
+        dest: "{{ cloud_init_img_download_target_path }}"
+        mode: "0777"
+      delegate_to: 127.0.0.1
+
+    - name: Virt-customize the image
+      ansible.builtin.shell: |
+        cd {{ cloud_init_img_download_target_path }}
+        virt-customize -a {{ cloud_init_img_target_name }}.img --install qemu-guest-agent
+        virt-customize -a {{ cloud_init_img_target_name }}.img --install python3
+        virt-customize -a {{ cloud_init_img_target_name }}.img --root-password password:Password
+        virt-customize -a {{ cloud_init_img_target_name }}.img --run-command 'systemctl enable qemu-guest-agent'
+        virt-customize -a {{ cloud_init_img_target_name }}.img --run-command 'systemctl stop qemu-guest-agent'
+      delegate_to: 127.0.0.1
+
+    - name: Copy downloaded image to proxmox
+      ansible.builtin.copy:
+        src: "{{ cloud_init_img_download_target_path }}/{{ cloud_init_img_target_name }}.img"
+        dest: "{{ cloud_init_img_target_path }}/{{ cloud_init_img_target_name }}.img"
+        mode: "0777"
+        force: true
+
+- name: Replace cloud base image.
+  block:
+    - name: Remove existing cloud image
+      community.general.proxmox_kvm:
+        api_host: "{{ cloud_init_api_host }}"
+        api_user: "{{ cloud_init_api_user }}"
+        api_token_id: "{{ cloud_init_api_token_id }}"
+        api_token_secret: "{{ cloud_init_api_token_secret }}"
+        vmid: "{{ cloud_init_template_vmid }}"
+        state: absent
+
+    # Ansible Community General proxmox_kvm didn't do everything I needed.
+    - name: Qm create and import disk
+      ansible.builtin.shell: |
+        cd /tmp/
+        qm create {{ cloud_init_template_vmid }} --memory 2048 --net0 virtio,bridge=vmbr0
+        qm importdisk {{ cloud_init_template_vmid }} {{ cloud_init_img_target_name }}.img {{ cloud_init_storage_target }}
+
+    - name: 3 second pause
+      ansible.builtin.pause:
+        seconds: 3
+
+    - name: Step-by-step VM creation with qm commands
+      ansible.builtin.shell: |
+        qm set {{ cloud_init_template_vmid }} --scsihw virtio-scsi-pci --scsi0 {{ cloud_init_storage_target }}:vm-{{ cloud_init_template_vmid }}-disk-0
+        qm set {{ cloud_init_template_vmid }} --scsi0 size={{ cloud_init_disksize }}
+        qm set {{ cloud_init_template_vmid }} --ide2 local-lvm:cloudinit
+        qm set {{ cloud_init_template_vmid }} --boot order=scsi0
+        qm set {{ cloud_init_template_vmid }} --serial0 socket --vga serial0
+
+
+    - name: 3 second pause
+      ansible.builtin.pause:
+        seconds: 3
+
+    - name: Add Name, User ID, Password,and agent to new VM
+      community.general.proxmox_kvm:
+        api_host: "{{ cloud_init_api_host }}"
+        api_user: "{{ cloud_init_api_user }}"
+        api_token_id: "{{ cloud_init_api_token_id }}"
+        api_token_secret: "{{ cloud_init_api_token_secret }}"
+        name: CloudInitBase
+        vmid: "{{ cloud_init_template_vmid }}"
+        node: "{{ cloud_init_node_target }}"
+        agent: true # "enabled=1,fstrim_cloned_disks=1"
+        nameservers: 8.8.8.8
+        ipconfig:
+          ipconfig0: ip=dhcp,ip6=dhcp,gw=192.168.1.1
+        citype: nocloud
+        ciuser: ansibleadmin
+        cipassword: "{{ cloud_init_ci_password }}"
+        update: true
+
+    # - name: Create NIC net0 targeting the vm by id
+    #   community.general.proxmox_nic:
+    #     api_host: "{{ cloud_init_api_host }}"
+    #     api_user: "{{ cloud_init_api_user }}"
+    #     api_token_id: "{{ cloud_init_api_token_id }}"
+    #     api_token_secret: "{{ cloud_init_api_token_secret }}"
+    #     vmid: "{{ cloud_init_template_vmid }}"
+    #     interface: net0
+    #     bridge: vmbr0
+    #     firewall: false
+
+    - name: 3 second pause
+      ansible.builtin.pause:
+        seconds: 3
+
+    - name: Set SSH keys
+      community.general.proxmox_kvm:
+        api_host: "{{ cloud_init_api_host }}"
+        api_user: "{{ cloud_init_api_user }}"
+        api_token_id: "{{ cloud_init_api_token_id }}"
+        api_token_secret: "{{ cloud_init_api_token_secret }}"
+        node: "{{ cloud_init_node_target }}"
+        vmid: "{{ cloud_init_template_vmid }}"
+        sshkeys: "{{ cloud_init_public_keys }}"
+        update: true
+
+    - name: Convert to template
+      ansible.builtin.command:
+        cmd: qm template {{ cloud_init_template_vmid }}
+      register: my_output
+      changed_when: my_output.rc != 0
+
+    - name: Wait for server to update
+      ansible.builtin.wait_for:
+        timeout: 30

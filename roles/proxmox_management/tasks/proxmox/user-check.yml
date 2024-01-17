@@ -1,9 +1,9 @@
 ---
 - name: Check if Proxmox user exists
-  command: "pveum user list --output-format=json"
+  ansible.builtin.command: pveum user list --output-format=json
   register: userlist
   changed_when: false
 
 - name: Parse userlist and Create Proxmox user if not exists
-  include_tasks: create-user.yml
-  loop: "{{ user_list }}"
+  ansible.builtin.include_tasks: create-user.yml
+  loop: "{{ proxmox_management_user_list }}"

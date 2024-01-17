@@ -1,8 +1,0 @@
----
-# tasks file for promentheus-prod
-- name: Docker
-  ansible.builtin.include_tasks:
-    file: docker/install.yml
-- name: Prometheus
-  ansible.builtin.include_tasks:
-    file: prometheus/promentheus-observer.yml

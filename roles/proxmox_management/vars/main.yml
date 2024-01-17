@@ -1,26 +1,26 @@
 ---
 # vars file for proxmox_management
 
-packages:
+proxmox_management_packages:
   - python3-pip
   - python3
   - build-essential
 
-public_keys: "{{ ssh_pubkey }}"
-api_host: "proxmox"
-api_user: "ansibleadmin@pam"
-var_api_token_id: "{{ vault_api_token_id }}"
-var_api_token_secret: "{{ vault_api_token_secret }}"
-node_target: "proxmox"
-img_download_version: "jammy"
-img_target_name: "jammy-server-cloudimg-amd64"
-img_source_url: "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
-img_target_path: "~/"
-iso_target_path: "{{img_target_path}}{{img_target_name}}.qcow2"
-storage_target: "local-lvm"
-vm_defs:
-  - id: 2001
-    name: "cloudimage-base"
-    nets:
-      - id: 0
-        bridge: "vmbr0"
+# proxmox_management_public_keys: "{{ ssh_pubkey }}"
+# proxmox_management_api_host: proxmox
+# proxmox_management_api_user: ansibleadmin@pam
+# proxmox_management_var_api_token_id: "{{ vault_api_token_id }}"
+# proxmox_management_var_api_token_secret: "{{ vault_api_token_secret }}"
+# proxmox_management_node_target: proxmox
+# proxmox_management_img_download_version: jammy
+# proxmox_management_img_target_name: jammy-server-cloudimg-amd64
+# proxmox_management_img_source_url: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
+# proxmox_management_img_target_path: ~/
+# proxmox_management_iso_target_path: "{{ img_target_path }}{{ img_target_name }}.qcow2"
+# proxmox_management_storage_target: local-lvm
+# proxmox_management_vm_defs:
+#   - id: 2001
+#     name: cloudimage-base
+#     nets:
+#       - id: 0
+#         bridge: vmbr0

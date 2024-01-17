@@ -1,17 +1,11 @@
 ---
-
-- name: Ensure Proxmox is updated
-  apt:
-    update_cache: true
-    upgrade: true
-
 - name: Ensure Proxmox VE is installed
-  apt:
+  ansible.builtin.apt:
     name: proxmox-ve
     state: present
 
 - name: Ensure Proxmox services are running
-  service:
+  ansible.builtin.service:
     name: "{{ item }}"
     state: started
     enabled: true
@@ -20,41 +14,77 @@
     - pvedaemon
     - pveproxy
 
-- name: Remove to subscription repos
-  apt_repository:
+- name: Ensure enterprise repo file is not present
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/pve-enterprise.list
+    state: absent
+
+- name: Ensure ceph repo file is not present
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/ceph.list
+    state: absent
+
+- name: Remove pve subscription repos
+  ansible.builtin.apt_repository:
     repo: >
       deb https://enterprise.proxmox.com/debian/pve
       bookworm pve-enterprise
     state: absent
 
-- name: Switch to community repos
-  apt_repository:
+- name: Remove ceph subscription repos
+  ansible.builtin.apt_repository:
     repo: >
-     deb http://download.proxmox.com/debian/pve
-     bookworm pve-no-subscription
+      deb http://download.proxmox.com/debian/ceph-reef  bookworm enterprise
+    state: absent
+
+- name: Switch to community repos
+  ansible.builtin.apt_repository:
+    repo: >
+      deb http://download.proxmox.com/debian/pve
+      bookworm pve-no-subscription
     state: present
 
+- name: Switch to community repos
+  ansible.builtin.apt_repository:
+    repo: >
+      deb http://download.proxmox.com/debian/ceph-reef  bookworm no-subscription
+    state: present
+
+- name: Ensure Proxmox is updated
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: true
+
 - name: Update all packages to the latest version
-  apt:
+  ansible.builtin.apt:
     upgrade: dist
 
 - name: Install apt packages
-  apt:
-    name: "{{ packages }}"
-    state: latest
+  ansible.builtin.apt:
+    name: "{{ proxmox_management_packages }}"
+    state: present
 
-- name: pip update pip
-  pip:
+- name: Pip update pip
+  ansible.builtin.pip:
     name: pip
-    state: latest
+    state: present
     extra_args: --break-system-packages
 
 - name: Install dependencies
-  pip:
+  ansible.builtin.pip:
     name: "{{ item }}"
-    state: latest
+    state: present
     extra_args: --break-system-packages
   loop:
     - virtualenv
     - proxmoxer
     - passlib
+
+# # credit: https://johnscs.com/remove-proxmox51-subscription-notice/ & https://github.com/foundObjects/pve-nag-buster
+# - name: Modify line in file to remove nag message
+#   replace:
+#     path: /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+#     regexp: 'res[\s\n]*\.data\.status\.toLowerCase\(\) !== .active.'
+#     replace: "false"
+#     backup: yes
+#   notify: restart pveproxy

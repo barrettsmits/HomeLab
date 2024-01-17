@@ -1,0 +1,31 @@
+---
+- name: Add Docker GPG apt Key
+  ansible.builtin.apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add Docker Repository
+  ansible.builtin.apt_repository:
+    repo: deb https://download.docker.com/linux/ubuntu jammy stable
+    state: present
+
+- name: Update apt and install docker-ce
+  ansible.builtin.apt:
+    name: docker-ce
+    state: latest
+    update_cache: true
+
+- name: Install apt packages
+  ansible.builtin.apt:
+    name: pip
+    state: latest
+
+- name: Pip update pip
+  ansible.builtin.pip:
+    name: pip
+    state: latest
+
+- name: Install Docker Module for Python
+  ansible.builtin.pip:
+    name: docker
+    state: latest

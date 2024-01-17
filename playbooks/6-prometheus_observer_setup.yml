@@ -1,0 +1,13 @@
+- name: Install Observability stack (observer)
+  hosts: prometheus_prd
+  become: true
+  vars_files:
+    - ~/secrets/creds.yml
+  no_log: false
+  tags:
+    - monitoring
+    - observer
+  roles:
+    - prometheus_setup
+  vars:
+    ansible_become_pass: "{{ become_password }}"

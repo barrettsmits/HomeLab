@@ -1,0 +1,59 @@
+---
+# tasks file for containers
+
+- name: 10 second pause
+  ansible.builtin.pause:
+    seconds: 10
+
+- name: Create a new Proxmox container
+  community.general.proxmox:
+    api_host: "{{ container_init_api_host }}"
+    api_user: "{{ container_init_api_user }}"
+    api_password: "THINunitynoorange"
+    # api_token_id: "{{ container_init_api_token_id }}"
+    # api_token_secret: "{{ container_init_api_token_secret }}"
+    node: proxmox
+    vmid: 2222
+    ostemplate: local:vztmpl/ubuntu-22.04-standard_22.04-1_amd64.tar.zst
+    hostname: Portainer
+    password: "{{ vault_ansible_password }}"
+    disk: "LVM-Prime:30"
+    memory: 4096
+    cores: 2
+    netif: '{"net0":"name=eth0,ip=192.168.1.154/24,gw=192.168.1.1,bridge=vmbr0"}'
+    pubkey: "{{ vault_ssh_pubkey }}"
+    state: present
+    storage: LVM-Prime
+    unprivileged: false
+    features: 
+      - nesting=1
+
+- name: Start Portainer contatiner
+  community.general.proxmox:
+    api_host: "{{ container_init_api_host }}"
+    api_user: "{{ container_init_api_user }}"
+    api_password: "THINunitynoorange"
+    # api_token_id: "{{ container_init_api_token_id }}"
+    # api_token_secret: "{{ container_init_api_token_secret }}"
+    vmid: 2222
+    state: started
+
+- name: 60 second pause
+  ansible.builtin.pause:
+    seconds: 60
+
+- name: LXC - commands
+  ansible.builtin.shell: |
+    lxc-attach -n 2222 systemctl enable ssh
+    lxc-attach -n 2222 systemctl start ssh
+    lxc-attach -n 2222 mkdir /root/.ssh && chmod 700 /root/.ssh
+    pct push 2222 /root/.ssh/authorized_keys /root/.ssh/authorized_keys
+  become: true
+
+- name: Ensure AppArmor is unconfined for the LXC container
+  lineinfile:
+    path: /etc/pve/lxc/2222.conf
+    regexp: '^lxc.apparmor.profile'
+    line: 'lxc.apparmor.profile: unconfined'
+    state: present
+  become: yes

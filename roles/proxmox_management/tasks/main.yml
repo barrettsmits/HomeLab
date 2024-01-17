@@ -4,12 +4,12 @@
 - name: Proxmox
   ansible.builtin.include_tasks:
     file: proxmox/prep-proxmox.yml
+- name: Create Ansible group
+  ansible.builtin.include_tasks:
+    file: proxmox/create-groups.yml
 - name: Required user check
   ansible.builtin.include_tasks:
     file: proxmox/user-check.yml
-- name: Update VM templates
+- name: Create pools
   ansible.builtin.include_tasks:
-    file: proxmox/create-cloudinit.yml
-# - name: Last tasks
-#   ansible.builtin.include_tasks:
-#     file: run-this-last.yml
+    file: proxmox/create-pools.yml
