@@ -12,5 +12,6 @@
     ansible_become_pass: "{{ become_password }}"
     var_api_host: proxmox
     var_api_user: root@pam
+    var_api_password: "{{ vault_api_password }}"
     var_api_token_id: "{{ vault_api_token_id }}"
     var_api_token_secret: "{{ vault_api_token_secret }}"

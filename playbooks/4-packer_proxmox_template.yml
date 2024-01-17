@@ -1,4 +1,6 @@
 ---
+# 
+
 - name: Initiate Packer golden_image for proxmox VMs 
   hosts: localhost
   gather_facts: false
@@ -11,9 +13,10 @@
     version_num: 22.04
     path: "~/wsl_src/packer_golden_image"
     ansible_become_pass: "{{ become_password }}"
+    vault_token: "{{ hcl_vault_token }}"
   environment:
     # these are for Dev Vault server. add to vault for production 
-    VAULT_TOKEN: ''
+    VAULT_TOKEN: '{{ vault_token }}'
     VAULT_ADDR: 'http://127.0.0.1:8200'
   tasks:
     - name: Run Packer to build target image (this will take a while)

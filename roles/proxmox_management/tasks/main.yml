@@ -10,3 +10,6 @@
 - name: Required user check
   ansible.builtin.include_tasks:
     file: proxmox/user-check.yml
+- name: Create pools
+  ansible.builtin.include_tasks:
+    file: proxmox/create-pools.yml

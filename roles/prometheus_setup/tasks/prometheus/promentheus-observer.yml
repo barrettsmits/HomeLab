@@ -1,4 +1,9 @@
 ---
+- name: Set Prometheus hostname via systemd
+  ansible.builtin.hostname:
+    name: prometheus-prd
+    use: systemd
+
 - name: Create Folder /srv/prometheus if not exist
   ansible.builtin.file:
     path: /srv/prometheus
