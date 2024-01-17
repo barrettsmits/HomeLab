@@ -9,12 +9,3 @@ proxmox_management_packages:
 
 proxmox_management_user_realm: pam
 proxmox_management_user_list: "{{ vault_proxmox_userlist}}"
-  - username: bsmits
-    email: barrett.smits@gmail.com
-    password: "{{ vault_bsmits_password }}"
-  - username: dkasten
-    email: kastendl@gmail.com
-    password: "{{ vault_dkasten_password }}"
-  - username: ansibleadmin
-    email: barrett.smits+ansibleadmin@gmail.com
-    password: "{{ vault_ansible_password }}"

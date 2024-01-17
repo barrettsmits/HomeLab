@@ -1,5 +1,5 @@
 ---
-# Create users based on existing vars. 
+# Create users based on existing vars.
 
 - name: Set fact for user existence
   ansible.builtin.set_fact:
