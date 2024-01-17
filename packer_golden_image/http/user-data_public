@@ -23,7 +23,7 @@ autoinstall:
   # user-data:
   #   users:
   #     - name: username
-  #       passwd: $6$exDY1mhS4KUYCE/2$zmn9ToZwTKLhCw.b4/b.ZRTIZM30JZ4QrOQ2aOXJ8yk96xpcCof0kxKwuX1kqLG/ygbJ1f8wxED22bTL4F46P0
+  #       passwd: "$6$exDY1mhS4KUYCE/2$zmn9ToZwTKLhCw.b4/b.ZRTIZM30JZ4QrOQ2aOXJ8yk96xpcCof0kxKwuX1kqLG/ygbJ1f8wxED22bTL4F46P0" #ubuntu
   #       groups: [adm, cdrom, dip, plugdev, lxd, sudo]
   #       lock-passwd: false
   #       sudo: ALL=(ALL) NOPASSWD:ALL

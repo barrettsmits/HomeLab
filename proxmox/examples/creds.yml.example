@@ -1,0 +1,45 @@
+---
+# API Secrets:
+vault_api_password: 'Proxmox_API_Password'
+vault_ci_password: 'VM_Password'
+
+# Prod API token (Made by playbook 3-proxmox_api_token.yml) or manually created
+vault_api_token_id: 'ansible' # The api_user is added automatically and should not be added here. 
+vault_api_token_secret: 'Token'
+
+# DEV
+dev_vault_api_token_id: 'ansible' # The api_user is added automatically and should not be added here. 
+dev_vault_api_token_secret: 'token'
+
+# User Secrets
+vault_proxmox_userlist:
+  - username: 'user1'
+    email: 'example@example.com'
+    password: 'VerySecurePassword1'
+  - username: 'user2'
+    email: 'example@example.com'
+    password: 'VerySecurePassword2'
+  - username: 'ansible_user'
+    email: 'example@example.com'
+    password: 'VerySecurePassword3'
+
+
+
+# SSH public Key
+vault_ssh_pubkey: 'ssh-rsa AACAB3NzaC1yc2EAAAADAQABAAACAQDE+GYtvc=Zb9xDx/xsdfFL3dtSul2IoM5AebDlxtTdouRsMysqtVxVIhgLHVmy example@example.com
+
+# become_password
+become_password: 'SSH_Password'
+
+# Prometheus:
+prom_vm_password: 'Password'
+alertmanager_smtp_password: 'SecurePassword'
+
+# Vault:
+vault_vm_password: 'Password'
+
+# Portainer:
+portainer_vm_password: 'Password'
+
+# Kubernetes:
+k3s_vm_password: 'Password'

@@ -1,23 +1,22 @@
 ---
-# vm_init  
+# vm_init defaults
 
-
-# TL;DR variables for quick use
-global_description: "Created with Ansible on {{ ansible_date_time.date }}"
-global_node: 'proxmox'
-global_keyboard: 'en-us'
+# Variables for quick use
+vm_init_description: "Created with Ansible on {{ ansible_date_time.date }}"
+vm_init_node: 'proxmox'
+vm_init_keyboard: 'en-us'
 
 # Overwrite default variables for all VMs
-global:
+vm_init_defaults:
   acpi: 'true'
-  # Enable QEMU Agent, remember to install qemu-guest-agent on VMs 
+  # Enable QEMU Agent, remember to install qemu-guest-agent on VMs
   agent: 'true'
   api_host: "{{ var_api_host }}"
   api_user: "{{ var_api_user }}"
   api_password: "{{ var_api_password }}"
   api_token_id: "{{ var_api_token_id }}"
   api_token_secret: "{{ var_api_token_secret }}"
-  args: '-serial unix:/var/run/qemu-server/<vmid>.serial,server,nowait' # args must be ran with Root@pam for proxmox. 
+  args: '-serial unix:/var/run/qemu-server/<vmid>.serial,server,nowait' # args must be ran with Root@pam for proxmox.
   autostart: 'true'
   balloon: '0'
   bios: ''
@@ -30,7 +29,7 @@ global:
   cpulimit: ''
   cpuunits: '1000'
   delete: ''
-  description: '{{ global_description }}'
+  description: '{{ vm_init_description }}'
   digest: ''
   # Set force to empty value because of a bug
   force: ''
@@ -42,7 +41,7 @@ global:
   hotplug: '0'
   hugepages: ''
   ide: ''
-  keyboard: '{{ global_keyboard }}'
+  keyboard: '{{ vm_init_keyboard }}'
   kvm: 'true'
   localtime: ''
   lock: ''
@@ -53,7 +52,7 @@ global:
   name: ''
   net: ''
   newid: ''
-  node: '{{ global_node }}'
+  node: '{{ vm_init_node }}'
   numa: ''
   numa_enabled: ''
   onboot: 'true'
@@ -83,7 +82,7 @@ global:
   target: ''
   tdf: ''
   template: 'false'
-  # Time out required as the default of 30 seconds is much to short for a full clone. 
+  # Time out required as the default of 30 seconds is much to short for a full clone.
   timeout: '500'
   update: ''
   validate_certs: ''

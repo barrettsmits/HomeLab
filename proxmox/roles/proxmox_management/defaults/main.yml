@@ -8,7 +8,7 @@ proxmox_management_packages:
   - build-essential
 
 proxmox_management_user_realm: pam
-proxmox_management_user_list:
+proxmox_management_user_list: "{{ vault_proxmox_userlist}}"
   - username: bsmits
     email: barrett.smits@gmail.com
     password: "{{ vault_bsmits_password }}"

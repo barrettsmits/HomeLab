@@ -12,8 +12,8 @@
   vars:
     ansible_become_pass: "{{ become_password }}"
 
-- name: Build Portainer LXC instance
-  ansible.builtin.import_playbook: ./misc_books/portainer.yml
+# - name: Build Portainer LXC instance
+#   ansible.builtin.import_playbook: ../playbooks/portainer.yml
 
   # TODO
   # use proxmox inventory to confirm all base VMs exist and are at the correct IP address.

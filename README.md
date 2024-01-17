@@ -1,7 +1,12 @@
 # Barrett's Ansible + Proxmox Homelab Automation
 
 ## What is this?
-This repo contains the Ansible playbooks and configuration used to manage and automate my Proxmox based homelab. It makes use of the [proxmox](https://docs.ansible.com/ansible/latest/modules/proxmox_module.html) and [proxmox_kvm](https://docs.ansible.com/ansible/latest/modules/proxmox_kvm_module.html) modules.
+This repo contains the Ansible playbooks and configuration used to manage and automate my Proxmox based homelab. 
+
+For Proxmox, it makes use of the [proxmox](https://docs.ansible.com/ansible/latest/modules/proxmox_module.html) [proxmox_nic] (https://docs.ansible.com/ansible/latest/collections/community/general/proxmox_nic_module.html), and [proxmox_kvm](https://docs.ansible.com/ansible/latest/modules/proxmox_kvm_module.html) modules.
+
+For Vault, it makes use of the [ansible-vault](https://github.com/ansible-community/ansible-vault) module. 
+
 
 ## Requirements
 * [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/index.html)
@@ -41,6 +46,11 @@ Initial config for localhost (Ansible host), Proxmox VE Host, multiple VMs (Prom
 * Should only need to be ran once, but can be used to setup a remote Ansible host as well.
 * Run `ansible-playbook ./playbooks/1-localhost_setup.yml` to run the initial playbook. 
 * 
+
+## 2-proxmox_host_setup
+* Configures proxmox VE Host, 
+* 
+
 
 Initiates Proxmox VE setup; creating groups, users, permisisons, pools, and the option to create an API key if it doesn't exist. (Output to terminal). 
 

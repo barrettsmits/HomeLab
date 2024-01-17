@@ -1,7 +1,8 @@
 ---
-# 
+# Intiiate golden image creation via Packer on localhost
+# A Valid HCL Vault instance needs to be available, either remotely or on local host.
 
-- name: Initiate Packer golden_image for proxmox VMs 
+- name: Initiate Packer golden_image for proxmox VMs
   hosts: localhost
   gather_facts: false
   become: true
@@ -15,7 +16,7 @@
     ansible_become_pass: "{{ become_password }}"
     vault_token: "{{ hcl_vault_token }}"
   environment:
-    # these are for Dev Vault server. add to vault for production 
+    # Required Vault ENV variables. currently set for Dev vault server.
     VAULT_TOKEN: '{{ vault_token }}'
     VAULT_ADDR: 'http://127.0.0.1:8200'
   tasks:
