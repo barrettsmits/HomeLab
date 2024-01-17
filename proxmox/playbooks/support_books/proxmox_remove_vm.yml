@@ -1,4 +1,7 @@
 ---
+# Command Line to run playbook to change the vmid to be removed 
+# ansible-playbook ../support_books/ -e var_vmid 1100
+
 - name: Stop and Remove specified VMs
   hosts: proxmox_prd
   gather_facts: true

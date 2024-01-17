@@ -1,0 +1,36 @@
+
+[all:vars]
+ansible_connection=ssh
+ansible_ssh_pass=ssh_password
+
+[proxmox_prd]
+192.168.1.205 ansible_user=root
+
+[prometheus_prd]
+192.168.1.158 ansible_user=ssh_user
+
+[portainer_prd]
+192.168.1.49 ansible_user=ssh_user ansible_ssh_pass=ssh_password
+
+[production:children]
+proxmox_prd
+prometheus_prd
+portainer_prd
+
+
+#[proxmox_dev]
+#192.168.1.26 ansible_user=root
+
+[prometheus_dev]
+192.168.1.156 ansible_user=ssh_user ansible_ssh_pass=ssh_password
+
+[portainer_dev]
+192.168.1.163 ansible_user=ssh_user ansible_ssh_pass=ssh_password
+
+[vault_dev]
+192.168.1.27 ansible_user=ssh_user ansible_ssh_pass=ssh_password
+
+[development:children]
+prometheus_dev
+portainer_dev
+vault_dev

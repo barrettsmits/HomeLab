@@ -1,0 +1,36 @@
+#cloud-config
+autoinstall:
+  version: 1
+  locale: en_US.UTF-8
+  identity:
+    hostname: packer-ubuntu-22.04
+    password: "$6$exDY1mhS4KUYCE/2$zmn9ToZwTKLhCw.b4/b.ZRTIZM30JZ4QrOQ2aOXJ8yk96xpcCof0kxKwuX1kqLG/ygbJ1f8wxED22bTL4F46P0" #ubuntu
+    username: ansibleadmin
+    realname: ansible
+  refresh-installer: 
+    update: false
+  ssh:
+    install-server: yes
+    allow-pw: yes
+  packages:
+    - qemu-guest-agent
+    - tree
+  storage:
+    layout:
+      name: direct
+    swap:
+      size: 512
+  # user-data:
+  #   users:
+  #     - name: username
+  #       passwd: $6$exDY1mhS4KUYCE/2$zmn9ToZwTKLhCw.b4/b.ZRTIZM30JZ4QrOQ2aOXJ8yk96xpcCof0kxKwuX1kqLG/ygbJ1f8wxED22bTL4F46P0
+  #       groups: [adm, cdrom, dip, plugdev, lxd, sudo]
+  #       lock-passwd: false
+  #       sudo: ALL=(ALL) NOPASSWD:ALL
+  #       shell: /bin/bash
+  #       ssh_authorized_keys:
+  #         - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDE+GYtvc9Zb9xDx/ example@example.com
+  late-commands:
+    - echo 'ansibleadmin ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/ansibleadmin
+    - 'sed -i "s/dhcp4: true/&\n      dhcp-identifier: mac/" /target/etc/netplan/00-installer-config.yaml'
+    #- sudo systemctl start qemu-guest-agent

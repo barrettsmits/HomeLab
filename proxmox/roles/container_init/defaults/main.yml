@@ -1,0 +1,8 @@
+---
+# defaults file for container init
+
+container_init_api_host: "{{ var_api_host }}"
+container_init_api_user: "{{ var_api_user }}"
+container_init_api_password: "{{ var_api_password: }}"
+container_init_api_token_id: "{{ var_api_token_id }}"
+container_init_api_token_secret: "{{ var_api_token_secret }}"
