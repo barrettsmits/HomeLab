@@ -9,6 +9,11 @@
   vars_files:
     - ~/secrets/creds.yml
   vars:
-    ansible_become_pass: 'ubuntu' # "{{ become_password }}"
+    ansible_become_pass: "{{ become_password }}"
+    vault_backend: 'file'
+    vault_backend_file: 'vault_backend_file.j2'
+    vault_cluster_disable: True
+    vault_log_level: debug
+    vault_tls_disable: true
   roles:
     - ansible-community.ansible-vault

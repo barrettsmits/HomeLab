@@ -12,7 +12,7 @@
   vars:
     use_force: false
     version_num: 22.04
-    path: "~/wsl_src/packer_golden_image"
+    path: "~/wsl_src/homelab/HomeLab/packer_golden_image"
     ansible_become_pass: "{{ become_password }}"
     vault_token: "{{ hcl_vault_token }}"
   environment:

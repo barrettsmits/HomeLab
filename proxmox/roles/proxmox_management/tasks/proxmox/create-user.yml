@@ -6,7 +6,6 @@
     user_json: "{{ userlist.stdout | from_json }}"
   ignore_errors: true
   no_log: true
-  change_when: false
 
 - name: 'Check if user exists: {{ item.username }}'
   ansible.builtin.set_fact:
@@ -24,11 +23,9 @@
     groups: sudo
     append: true
   when: not user_exists
-  change_when: false
 
 - name: Create Proxmox user if does not exists
   ansible.builtin.command: >
     pveum useradd {{ item.username }}@{{ proxmox_management_user_realm }}
     --password {{ item.password }} --email {{ item.email }} --group admin
   when: not user_exists
-  change_when: true

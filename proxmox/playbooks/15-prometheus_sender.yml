@@ -8,7 +8,7 @@
     - monitoring
     - target
   roles:
-    - observibility
+    - ../roles/observibility
   vars:
     ansible_become_pass: "{{ become_password }}"
 

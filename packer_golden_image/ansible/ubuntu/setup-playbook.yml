@@ -1,10 +1,10 @@
 ---
 - hosts: all
   become: true
-  vars_file:
+  vars_files:
     ~/secrets/creds.yml
   vars:
-    created_username: username
+    created_username: ansibleadmin
     ansible_become_pass: "{{ become_password }}"
 
   tasks:

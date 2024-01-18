@@ -26,6 +26,7 @@
       - lxml
       - simplejson
       - pywinrm
+      - netaddr
   tasks:
     - name: Install required apt packages
       apt:

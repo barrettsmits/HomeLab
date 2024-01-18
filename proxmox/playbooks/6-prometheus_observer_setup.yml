@@ -8,6 +8,6 @@
     - monitoring
     - observer
   roles:
-    - prometheus_setup
+    - ../roles/prometheus_setup
   vars:
     ansible_become_pass: "{{ become_password }}"

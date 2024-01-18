@@ -7,8 +7,8 @@ vault_ci_password: 'VM_Password'
 vault_api_token_id: 'ansible' # The api_user is added automatically and should not be added here. 
 vault_api_token_secret: 'Token'
 
-# DEV
-dev_vault_api_token_id: 'ansible' # The api_user is added automatically and should not be added here. 
+# DEV API token
+dev_vault_api_token_id: 'ansible'
 dev_vault_api_token_secret: 'token'
 
 # User Secrets
@@ -28,7 +28,7 @@ vault_proxmox_userlist:
 # SSH public Key
 vault_ssh_pubkey: 'ssh-rsa AACAB3NzaC1yc2EAAAADAQABAAACAQDE+GYtvc=Zb9xDx/xsdfFL3dtSul2IoM5AebDlxtTdouRsMysqtVxVIhgLHVmy example@example.com
 
-# become_password
+# Become_password
 become_password: 'SSH_Password'
 
 # Prometheus:

@@ -10,8 +10,8 @@
     proxmox_host: "192.168.1.205:8006"
     proxmox_user: "root@pam"
     proxmox_password: "{{ vault_api_password }}"
-    target_user: "ansibleadmin@pam"
-    new_token_name: "ansible"
+    target_user: "root@pam"
+    new_token_name: "test"
   tasks:
     - name: Log in to Proxmox and get ticket
       uri:
