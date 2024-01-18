@@ -23,7 +23,8 @@ vault_proxmox_userlist:
     email: 'example@example.com'
     password: 'VerySecurePassword3'
 
-
+# Packer Vault Token:
+hcl_vault_token: 'VAULT_TOKEN_ENV'
 
 # SSH public Key
 vault_ssh_pubkey: 'ssh-rsa AACAB3NzaC1yc2EAAAADAQABAAACAQDE+GYtvc=Zb9xDx/xsdfFL3dtSul2IoM5AebDlxtTdouRsMysqtVxVIhgLHVmy example@example.com
