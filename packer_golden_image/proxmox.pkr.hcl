@@ -2,8 +2,8 @@ locals {
   linux_notes               = "Template based on ${var.os_family}-${var.os_version} with CIS hardening, built using packer on {{ isotime \"2006-01-02\" }} at {{isotime \"3:04PM\"}}"
   win_notes                 = "Template based on ${var.os_family} ${var.os_version}, built using packer on {{ isotime \"2006-01-02\" }} at {{isotime \"3:04PM\"}}"
   vm_name                   = "${var.os_family}-${var.os_version}"
-  vm_id                     = "9999"
-  ver-num                   = "v1"
+  vm_id                     = "9998"
+  ver-num                   = "v2"
   vault_connection_password = vault("/secret/data/packer", "vault_ssh_connection")
   vault_proxmox_password    = vault("/secret/data/packer", "vault_proxmox_password")
 }

@@ -97,24 +97,24 @@ vm_init_list:
     cpus: 2
     memory: 4096
     pool: 'Prod'
-    # ipconfig: {"ipconfig0":"ip=192.168.1.27/24,gw=192.168.1.1/24"}
+    # ipconfig: {"ipconfig0":"ip=192.168.1.147/24,gw=192.168.1.1/24"}
     nic:
       interface: 'net0'
       bridge: 'vmbr0'
       mac: 'BC:24:11:46:1B:47'
       firewall: false
-  - name: vault-raft-prd-02
-    newid: 3202
-    # net: {"net0":"virtio=BC:24:11:B1:7F:46,bridge=vmbr0"}
-    virtio: {"virtio0":"LVM-Prime:20"}
-    bootdisk: 'virtio0'
-    cores: 2
-    cpus: 2
-    memory: 4096
-    pool: 'Prod'
-    # ipconfig: {"ipconfig0":"ip=192.168.1.27/24,gw=192.168.1.1/24"}
-    nic:
-      interface: 'net0'
-      bridge: 'vmbr0'
-      mac: 'BC:24:11:46:1B:48'
-      firewall: false
+  # - name: vault-raft-prd-02
+  #   newid: 3202
+  #   # net: {"net0":"virtio=BC:24:11:B1:7F:46,bridge=vmbr0"}
+  #   virtio: {"virtio0":"LVM-Prime:20"}
+  #   bootdisk: 'virtio0'
+  #   cores: 2
+  #   cpus: 2
+  #   memory: 4096
+  #   pool: 'Prod'
+  #   # ipconfig: {"ipconfig0":"ip=192.168.1.27/24,gw=192.168.1.1/24"}
+  #   nic:
+  #     interface: 'net0'
+  #     bridge: 'vmbr0'
+  #     mac: 'BC:24:11:46:1B:48'
+  #     firewall: false

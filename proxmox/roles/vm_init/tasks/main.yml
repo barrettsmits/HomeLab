@@ -1,48 +1,27 @@
 ---
 - name: Clone vm from golden-image template
   community.general.proxmox_kvm:
-    api_host: >
-      "{{ item['api_host'] if item.get('api_host')
-      else ( vm_init_defaults['api_host'] if vm_init_defaults['api_host'] else omit ) }}"
-    # api_password: >
-    #   "{{ item['api_password'] if item.get('api_password')
-    #   else ( vm_init_defaults['api_password'] if vm_init_defaults['api_password'] else omit ) }}"
-    api_user: >
-      "{{ item['api_user'] if item.get('api_user')
-      else ( vm_init_defaults['api_user'] if vm_init_defaults['api_user'] else omit ) }}"
-    api_token_secret: >
-      "{{ item['api_token_secret'] if item.get('api_token_secret')
-      else ( vm_init_defaults['api_token_secret'] if vm_init_defaults['api_token_secret'] else omit ) }}"
-    api_token_id: >
-      "{{ item['api_token_id'] if item.get('api_token_id')
-      else ( vm_init_defaults['api_token_id'] if vm_init_defaults['api_token_id'] else omit ) }}"
+    api_host: "{{ item['api_host'] if item.get('api_host') else ( vm_init_defaults['api_host'] if vm_init_defaults['api_host'] else omit ) }}"
+    # api_password: "{{ item['api_password'] if item.get('api_password') else ( vm_init_defaults['api_password'] if vm_init_defaults['api_password'] else omit ) }}"
+    api_user: "{{ item['api_user'] if item.get('api_user') else ( vm_init_defaults['api_user'] if vm_init_defaults['api_user'] else omit ) }}"
+    api_token_secret: "{{ item['api_token_secret'] if item.get('api_token_secret') else ( vm_init_defaults['api_token_secret'] if vm_init_defaults['api_token_secret'] else omit ) }}"
+    api_token_id: "{{ item['api_token_id'] if item.get('api_token_id') else ( vm_init_defaults['api_token_id'] if vm_init_defaults['api_token_id'] else omit ) }}"
     clone: "{{ item['clone'] if item.get('clone') else ( vm_init_defaults['clone'] if vm_init_defaults['clone'] else omit ) }}"
     name: "{{ item['name'] if item.get('name') else ( vm_init_defaults['name'] if vm_init_defaults['name'] else omit ) }}"
     node: "{{ item['node'] if item.get('node') else ( vm_init_defaults['node'] if vm_init_defaults['node'] else omit ) }}"
     newid: "{{ item['newid'] if item.get('newid') else ( vm_init_defaults['newid'] if vm_init_defaults['newid'] else omit ) }}"
-    timeout: "{{ item['timeout'] if item.get('timeout') else ( vm_init_defaults['timeout'] if vm_init_defaults['timeout'] else omit ) }}"
+    timeout: "{{ item['timeout'] if item.get('timeout') else ( vm_init_defaults['timeout'] if vm_init_defaults['timeout'] else 500 ) }}"
   with_items: "{{ vm_init_list | default([]) }}"
-  notify: pause 30
 
 - name: Update settings of VM
   community.general.proxmox_kvm:
     acpi: "{{ item['acpi'] if item.get('acpi') else vm_init_defaults['acpi'] }}"
     agent: "{{ item['agent'] if item.get('agent') else ( vm_init_defaults['agent'] if vm_init_defaults['agent'] else omit ) }}"
-    api_host: >
-      "{{ item['api_host'] if item.get('api_host')
-      else ( vm_init_defaults['api_host'] if vm_init_defaults['api_host'] else omit ) }}"
-    # api_password: >
-    #   "{{ item['api_password'] if item.get('api_password')
-    #   else ( vm_init_defaults['api_password'] if vm_init_defaults['api_password'] else omit ) }}"
-    api_user: >
-      "{{ item['api_user'] if item.get('api_user')
-      else ( vm_init_defaults['api_user'] if vm_init_defaults['api_user'] else omit ) }}"
-    api_token_secret: >
-      "{{ item['api_token_secret'] if item.get('api_token_secret')
-      else ( vm_init_defaults['api_token_secret'] if vm_init_defaults['api_token_secret'] else omit ) }}"
-    api_token_id: >
-      "{{ item['api_token_id'] if item.get('api_token_id')
-      else ( vm_init_defaults['api_token_id'] if vm_init_defaults['api_token_id'] else omit ) }}"
+    api_host: "{{ item['api_host'] if item.get('api_host') else ( vm_init_defaults['api_host'] if vm_init_defaults['api_host'] else omit ) }}"
+    # api_password: "{{ item['api_password'] if item.get('api_password') else ( vm_init_defaults['api_password'] if vm_init_defaults['api_password'] else omit ) }}"
+    api_user: "{{ item['api_user'] if item.get('api_user') else ( vm_init_defaults['api_user'] if vm_init_defaults['api_user'] else omit ) }}"
+    api_token_secret: "{{ item['api_token_secret'] if item.get('api_token_secret') else ( vm_init_defaults['api_token_secret'] if vm_init_defaults['api_token_secret'] else omit ) }}"
+    api_token_id: "{{ item['api_token_id'] if item.get('api_token_id') else ( vm_init_defaults['api_token_id'] if vm_init_defaults['api_token_id'] else omit ) }}"
     # args: "{{ item['args'] if item.get('args') else ( vm_init_defaults['args'] if vm_init_defaults['args'] else omit ) }}"
     autostart: "{{ item['autostart'] if item.get('autostart') else vm_init_defaults['autostart'] }}"
     balloon: "{{ item['balloon'] if item.get('balloon') else vm_init_defaults['balloon'] }}"
@@ -54,9 +33,7 @@
     cpulimit: "{{ item['cpulimit'] if item.get('cpulimit') else ( vm_init_defaults['cpulimit'] if vm_init_defaults['cpulimit'] else omit ) }}"
     cpuunits: "{{ item['cpuunits'] if item.get('cpuunits') else vm_init_defaults['cpuunits'] }}"
     delete: "{{ item['delete'] if item.get('delete') else ( vm_init_defaults['delete'] if vm_init_defaults['delete'] else omit ) }}"
-    description: >
-      "{{ item['description'] if item.get('description')
-      else ( vm_init_defaults['description'] if vm_init_defaults['description'] else omit ) }}"
+    description: "{{ item['description'] if item.get('description') else ( vm_init_defaults['description'] if vm_init_defaults['description'] else omit ) }}"
     digest: "{{ item['digest'] if item.get('digest') else ( vm_init_defaults['digest'] if vm_init_defaults['digest'] else omit ) }}"
     # force: "{{ item['force'] if item.get('force') else vm_init_defaults['force'] }}"
     force: "{{ item['force'] if item.get('force') else ( vm_init_defaults['force'] if vm_init_defaults['force'] else omit ) }}"
@@ -73,29 +50,19 @@
     lock: "{{ item['lock'] if item.get('lock') else ( vm_init_defaults['lock'] if vm_init_defaults['lock'] else omit ) }}"
     machine: "{{ item['machine'] if item.get('machine') else ( vm_init_defaults['machine'] if vm_init_defaults['machine'] else omit ) }}"
     memory: "{{ item['memory'] if item.get('memory') else vm_init_defaults['memory'] }}"
-    migrate_downtime: >
-      "{{ item['migrate_downtime'] if item.get('migrate_downtime')
-      else ( vm_init_defaults['migrate_downtime'] if vm_init_defaults['migrate_downtime'] else omit ) }}"
-    migrate_speed: >
-      "{{ item['migrate_speed'] if item.get('migrate_speed')
-      else ( vm_init_defaults['migrate_speed'] if vm_init_defaults['migrate_speed'] else omit ) }}"
+    migrate_downtime: "{{ item['migrate_downtime'] if item.get('migrate_downtime') else ( vm_init_defaults['migrate_downtime'] if vm_init_defaults['migrate_downtime'] else omit ) }}"
+    migrate_speed: "{{ item['migrate_speed'] if item.get('migrate_speed') else ( vm_init_defaults['migrate_speed'] if vm_init_defaults['migrate_speed'] else omit ) }}"
     name: "{{ item['name'] if item.get('name') else ( vm_init_defaults['name'] if vm_init_defaults['name'] else omit ) }}"
     net: "{{ item['net'] if item.get('net') else ( vm_init_defaults['net'] if vm_init_defaults['net'] else omit ) }}"
     newid: "{{ item['newid'] if item.get('newid') else ( vm_init_defaults['newid'] if vm_init_defaults['newid'] else omit ) }}"
     node: "{{ item['node'] if item.get('node') else ( vm_init_defaults['node'] if vm_init_defaults['node'] else omit ) }}"
     numa: "{{ item['numa'] if item.get('numa') else ( vm_init_defaults['numa'] if vm_init_defaults['numa'] else omit ) }}"
-    numa_enabled: >
-      "{{ item['numa_enabled'] if item.get('numa_enabled')
-      else ( vm_init_defaults['numa_enabled'] if vm_init_defaults['numa_enabled'] else omit ) }}"
+    numa_enabled: "{{ item['numa_enabled'] if item.get('numa_enabled') else ( vm_init_defaults['numa_enabled'] if vm_init_defaults['numa_enabled'] else omit ) }}"
     onboot: "{{ item['onboot'] if item.get('onboot') else vm_init_defaults['onboot'] }}"
     ostype: "{{ item['ostype'] if item.get('ostype') else vm_init_defaults['ostype'] }}"
-    parallel: >
-      "{{ item['parallel'] if item.get('parallel')
-      else ( vm_init_defaults['parallel'] if vm_init_defaults['parallel'] else omit ) }}"
+    parallel: "{{ item['parallel'] if item.get('parallel') else ( vm_init_defaults['parallel'] if vm_init_defaults['parallel'] else omit ) }}"
     pool: "{{ item['pool'] if item.get('pool') else ( vm_init_defaults['pool'] if vm_init_defaults['pool'] else omit ) }}"
-    protection: >
-      "{{ item['protection'] if item.get('protection')
-      else ( vm_init_defaults['protection'] if vm_init_defaults['protection'] else omit ) }}"
+    protection: "{{ item['protection'] if item.get('protection') else ( vm_init_defaults['protection'] if vm_init_defaults['protection'] else omit ) }}"
     reboot: "{{ item['reboot'] if item.get('reboot') else ( vm_init_defaults['reboot'] if vm_init_defaults['reboot'] else omit ) }}"
     revert: "{{ item['revert'] if item.get('revert') else ( vm_init_defaults['revert'] if vm_init_defaults['revert'] else omit ) }}"
     sata: "{{ item['sata'] if item.get('sata') else ( vm_init_defaults['sata'] if vm_init_defaults['sata'] else omit ) }}"
@@ -117,9 +84,7 @@
     template: "{{ item['template'] if item.get('template') else vm_init_defaults['template'] }}"
     timeout: "{{ item['timeout'] if item.get('timeout') else ( vm_init_defaults['timeout'] if vm_init_defaults['timeout'] else omit ) }}"
     update: "{{ item['update'] if item.get('update') else ( vm_init_defaults['update'] if vm_init_defaults['update'] else omit ) }}"
-    validate_certs: >
-      "{{ item['validate_certs'] if item.get('validate_certs')
-      else ( vm_init_defaults['validate_certs'] if vm_init_defaults['validate_certs'] else omit ) }}"
+    validate_certs: "{{ item['validate_certs'] if item.get('validate_certs') else ( vm_init_defaults['validate_certs'] if vm_init_defaults['validate_certs'] else omit ) }}"
     vcpus: "{{ item['vcpus'] if item.get('vcpus') else ( vm_init_defaults['vcpus'] if vm_init_defaults['vcpus'] else omit ) }}"
     vga: "{{ item['vga'] if item.get('vga') else vm_init_defaults['vga'] }}"
     virtio: "{{ item['virtio'] if item.get('virtio') else ( vm_init_defaults['virtio'] if vm_init_defaults['virtio'] else omit ) }}"
@@ -129,21 +94,11 @@
 
 - name: Removing NIC net0 targeting the vm by id
   community.general.proxmox_nic:
-    api_host: >
-      "{{ item['api_host'] if item.get('api_host')
-      else ( vm_init_defaults['api_host'] if vm_init_defaults['api_host'] else omit ) }}"
-    # api_password: >
-    #   "{{ item['api_password'] if item.get('api_password')
-    #   else ( vm_init_defaults['api_password'] if vm_init_defaults['api_password'] else omit ) }}"
-    api_user: >
-      "{{ item['api_user'] if item.get('api_user')
-      else ( vm_init_defaults['api_user'] if vm_init_defaults['api_user'] else omit ) }}"
-    api_token_secret: >
-      "{{ item['api_token_secret'] if item.get('api_token_secret')
-      else ( vm_init_defaults['api_token_secret'] if vm_init_defaults['api_token_secret'] else omit ) }}"
-    api_token_id: >
-      "{{ item['api_token_id'] if item.get('api_token_id')
-      else ( vm_init_defaults['api_token_id'] if vm_init_defaults['api_token_id'] else omit ) }}"
+    api_host: "{{ item['api_host'] if item.get('api_host') else ( vm_init_defaults['api_host'] if vm_init_defaults['api_host'] else omit ) }}"
+    # api_password: "{{ item['api_password'] if item.get('api_password') else ( vm_init_defaults['api_password'] if vm_init_defaults['api_password'] else omit ) }}"
+    api_user: "{{ item['api_user'] if item.get('api_user') else ( vm_init_defaults['api_user'] if vm_init_defaults['api_user'] else omit ) }}"
+    api_token_secret: "{{ item['api_token_secret'] if item.get('api_token_secret') else ( vm_init_defaults['api_token_secret'] if vm_init_defaults['api_token_secret'] else omit ) }}"
+    api_token_id: "{{ item['api_token_id'] if item.get('api_token_id') else ( vm_init_defaults['api_token_id'] if vm_init_defaults['api_token_id'] else omit ) }}"
     vmid: "{{ item['newid'] if item.get('newid') else omit }}"
     interface: net0
     state: absent
@@ -151,21 +106,11 @@
 
 - name: Create NIC net0 targeting the vm by id
   community.general.proxmox_nic:
-    api_host: >
-      "{{ item['api_host'] if item.get('api_host')
-      else ( vm_init_defaults['api_host'] if vm_init_defaults['api_host'] else omit ) }}"
-    # api_password: >
-    #   "{{ item['api_password'] if item.get('api_password')
-    #   else ( vm_init_defaults['api_password'] if vm_init_defaults['api_password'] else omit ) }}"
-    api_user: >
-      "{{ item['api_user'] if item.get('api_user')
-      else ( vm_init_defaults['api_user'] if vm_init_defaults['api_user'] else omit ) }}"
-    api_token_secret: >
-      "{{ item['api_token_secret'] if item.get('api_token_secret')
-      else ( vm_init_defaults['api_token_secret'] if vm_init_defaults['api_token_secret'] else omit ) }}"
-    api_token_id: >
-      "{{ item['api_token_id'] if item.get('api_token_id')
-      else ( vm_init_defaults['api_token_id'] if vm_init_defaults['api_token_id'] else omit ) }}"
+    api_host: "{{ item['api_host'] if item.get('api_host') else ( vm_init_defaults['api_host'] if vm_init_defaults['api_host'] else omit ) }}"
+    # api_password: "{{ item['api_password'] if item.get('api_password') else ( vm_init_defaults['api_password'] if vm_init_defaults['api_password'] else omit ) }}"
+    api_user: "{{ item['api_user'] if item.get('api_user') else ( vm_init_defaults['api_user'] if vm_init_defaults['api_user'] else omit ) }}"
+    api_token_secret: "{{ item['api_token_secret'] if item.get('api_token_secret') else ( vm_init_defaults['api_token_secret'] if vm_init_defaults['api_token_secret'] else omit ) }}"
+    api_token_id: "{{ item['api_token_id'] if item.get('api_token_id') else ( vm_init_defaults['api_token_id'] if vm_init_defaults['api_token_id'] else omit ) }}"
     vmid: "{{ item['newid'] if item.get('newid') else omit }}"
     interface: net0
     bridge: vmbr0
@@ -179,20 +124,13 @@
 
 - name: Start the VM
   community.general.proxmox_kvm:
-    api_host: >
-      "{{ item['api_host'] if item.get('api_host')
-      else ( vm_init_defaults['api_host'] if vm_init_defaults['api_host'] else omit ) }}"
-    # api_password: >-
-    #   "{{ item['api_password'] if item.get('api_password')
-    #   else ( vm_init_defaults['api_password'] if vm_init_defaults['api_password'] else omit ) }}"
+    api_host: "{{ item['api_host'] if item.get('api_host') else ( vm_init_defaults['api_host'] if vm_init_defaults['api_host'] else omit ) }}"
+    # api_password: "{{ item['api_password'] if item.get('api_password') else ( vm_init_defaults['api_password'] if vm_init_defaults['api_password'] else omit ) }}"
     api_user: "{{ item['api_user'] if item.get('api_user') else ( vm_init_defaults['api_user'] if vm_init_defaults['api_user'] else omit ) }}"
-    api_token_secret: >
-      "{{ item['api_token_secret'] if item.get('api_token_secret')
-      else ( vm_init_defaults['api_token_secret'] if vm_init_defaults['api_token_secret'] else omit ) }}"
-    api_token_id: >
-      "{{ item['api_token_id'] if item.get('api_token_id')
-      else ( vm_init_defaults['api_token_id'] if vm_init_defaults['api_token_id'] else omit ) }}"
+    api_token_secret: "{{ item['api_token_secret'] if item.get('api_token_secret') else ( vm_init_defaults['api_token_secret'] if vm_init_defaults['api_token_secret'] else omit ) }}"
+    api_token_id: "{{ item['api_token_id'] if item.get('api_token_id') else ( vm_init_defaults['api_token_id'] if vm_init_defaults['api_token_id'] else omit ) }}"
     vmid: "{{ item['newid'] if item.get('newid') else ( vm_init_defaults['newid'] if vm_init_defaults['newid'] else omit ) }}"
+    timeout: 100
     state: started
   with_items: "{{ vm_init_list | default([]) }}"
   register: result

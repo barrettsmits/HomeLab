@@ -5,6 +5,7 @@
 vm_init_description: "Created with Ansible on {{ ansible_date_time.date }}"
 vm_init_node: 'proxmox'
 vm_init_keyboard: 'en-us'
+vm_init_clone: 'goldenimage-Ubuntu-22.04-v1'
 
 # Overwrite default variables for all VMs
 vm_init_defaults:
@@ -23,7 +24,7 @@ vm_init_defaults:
   # Boot from disk and network
   boot: 'cnd'
   bootdisk: ''
-  clone: 'goldenimage-Ubuntu-22.04-v1'
+  clone: '{{ vm_init_clone }}'
   cores: '1'
   cpu: 'kvm64'
   cpulimit: ''

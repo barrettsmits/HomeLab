@@ -25,6 +25,8 @@ The first ansible playbook, is a setup for localhost, or the ansible host, depen
     * See Examples folder for example ansible.cfg, hosts, and unencypted creds.yml files. These example files can be used as a starting point or reference.
 * Servers (inventory) are defined in the `hosts` file and are placed in "groups" defined by `[]`. Located in /etc/ansible 
 * `creds.yml` will need to be created via `ansible-vault create` in the appropriate folder and will need to be configured like so:
+* See example [creds.yml](proxmox/examples/creds.yml.example) file
+
 
 ansible-vault create creds.yml:
 
@@ -48,6 +50,22 @@ Initial config for localhost (Ansible host), Proxmox VE Host, multiple VMs (Prom
 * 
 
 ## 2-proxmox_host_setup
+* Configures proxmox VE Host, 
+* 
+
+## 3-proxmox_api_token
+* Configures proxmox API Token if one doesn't exist.  
+* 
+
+## 4-packer_proxmox_template
+* Creates a Packer template on Proxmox for creating VMs
+* 
+
+## 5-proxmox_vm_init
+* Intiiates default VMs if they doesn't exist. 
+* 
+
+## 6-prometheus_observer_setup
 * Configures proxmox VE Host, 
 * 
 
