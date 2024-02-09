@@ -1,0 +1,20 @@
+---
+- name: Install Observability stack
+  hosts: prometheus_prd:!proxmox_prd
+  become: true
+  vars_files:
+    - ~/secrets/creds.yml
+  tags:
+    - monitoring
+    - target
+  roles:
+    - ../roles/observibility
+  vars:
+    ansible_become_pass: "{{ become_password }}"
+
+# - name: Build Portainer LXC instance
+#   ansible.builtin.import_playbook: ../playbooks/portainer.yml
+
+  # TODO
+  # use proxmox inventory to confirm all base VMs exist and are at the correct IP address.
+  # if not, create correct VMs

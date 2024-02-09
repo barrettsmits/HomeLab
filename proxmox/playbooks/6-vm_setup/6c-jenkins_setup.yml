@@ -1,0 +1,52 @@
+# jenkins_setup.yml
+- name: Initiate Jenkins vm
+  hosts: jenkins_prd
+  become_user: ansibleadmin
+  become: true
+  vars:
+    become_password: "THINunitynoorange"
+  tasks:
+    # UPDATE HOSTNAME FROM CLONED TEMPLATE
+    - name: Set jenkins hostname via systemd
+      ansible.builtin.hostname:
+        name: jenkins-prd
+        use: systemd
+    
+    - name: Install JRE and JDK
+      apt: 
+        name: "{{ item }}"
+        update_cache: yes
+        install_recommends: no
+      items:
+        - "openjdk-17-jre"
+        - "openjdk-17-jdk"
+    
+    - name: Add APT key
+      apt_key:
+        url: https://pkg.jenkins.io/debian/jenkins-ci.org.key
+   
+    - name: Copy jenkins.list to /etc/apt/sources.list.d/jenkins.list
+      copy:
+        src: jenkins.list
+        dest: /etc/apt/sources.list.d/jenkins.list
+    
+    - name: Install Jenkins
+      apt: 
+        name: jenkins
+        update_cache: yes
+        install_recommends: no
+    
+    # FIREWALL SETUP
+    - name: Open Jenkins port
+      ansible.builtin.ufw:
+        state: enabled
+        rule: allow
+        port: "8080"
+        proto: tcp
+
+    - name: Open SSH port
+      ansible.builtin.ufw:
+        state: enabled
+        rule: allow
+        port: "22"
+        proto: tcp
