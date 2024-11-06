@@ -1,0 +1,163 @@
+---
+# Command Line to run playbook to change the vmid to be removed
+# ansible-playbook ../support_books/proxmox_add_storage.yml --check
+
+- name: Set up NFS share on Proxmox host with 200GB partition
+  hosts: proxmox_prd
+  become: true
+  vars:
+    # Disk and partition variables
+    disk_device: /dev/sdc              # The disk to be used (update as needed)
+    partition_number: 1                # Partition number to create
+    partition_size: '200GB'            # Desired partition size
+    filesystem_type: ext4              # Filesystem type to format the partition
+    mount_point: /mnt/nfs_share        # Directory where the partition will be mounted
+    # NFS configuration variables
+    nfs_export_dir: /mnt/nfs_share     # Directory to be exported via NFS
+    nfs_network: '192.168.1.0/24'      # Network allowed to access the NFS share (update as needed)
+    # Firewall configuration
+    configure_firewall: false          # Set to true if you want to configure UFW
+  tasks:
+    - name: Ensure the disk is present
+      stat:
+        path: "{{ disk_device }}"
+      register: disk_stat
+
+    - name: Fail if the disk does not exist
+      fail:
+        msg: "Disk device {{ disk_device }} does not exist."
+      when: not disk_stat.stat.exists
+
+    - name: Install required packages
+      apt:
+        name:
+          - parted
+          - nfs-kernel-server
+        state: present
+        update_cache: yes
+      when: not ansible_check_mode
+
+    - name: Check if partition table exists
+      command: "parted -s {{ disk_device }} print"
+      register: parted_check
+      failed_when: false
+      changed_when: false
+
+    - name: Create partition table if none exists
+      parted:
+        device: "{{ disk_device }}"
+        label: gpt
+        unit: GB
+      when: "'unrecognised disk label' in parted_check.stderr or 'Partition Table: unknown' in parted_check.stdout"
+
+    - name: Gather disk partition information
+      command: "parted -s {{ disk_device }} unit GB"
+      register: parted_info
+      changed_when: false
+
+    - name: Parse partition information
+      set_fact:
+        existing_partitions: "{{ parted_info.stdout | regex_findall('^[ ]*[0-9]+[ ]+([0-9\\.]+)GB[ ]+([0-9\\.]+)GB', multiline=True) }}"
+
+    - name: Calculate part_start dynamically
+      set_fact:
+        part_start: >
+          {% if existing_partitions | length == 0 %}
+            0
+          {% else %}
+            {{ existing_partitions | map('last') | map('float') | max | round(3) }}
+          {% endif %}
+
+    - name: Partition the disk with 200GB partition
+      parted:
+        device: "{{ disk_device }}"
+        number: "{{ partition_number }}"
+        state: present
+        align: optimal
+        unit: GB
+        part_start: 0GB #"{{ part_start }}"
+        part_end: 200GB #"{{ (part_start | regex_replace('GB','') | float + partition_size | regex_replace('GB','') | float) | string }}GB"
+      register: parted_result
+      notify: update_facts
+      when: not ansible_check_mode
+
+    - name: Create filesystem on the new partition
+      filesystem:
+        fstype: "{{ filesystem_type }}"
+        dev: "{{ disk_device }}{{ partition_number }}"
+      when: parted_result.changed and not ansible_check_mode
+
+    - name: Create mount point
+      file:
+        path: "{{ mount_point }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Mount the filesystem
+      mount:
+        path: "{{ mount_point }}"
+        src: "{{ disk_device }}{{ partition_number }}"
+        fstype: "{{ filesystem_type }}"
+        opts: defaults
+        state: mounted
+      when: not ansible_check_mode
+
+    - name: Ensure mount persists on reboot
+      mount:
+        path: "{{ mount_point }}"
+        src: "{{ disk_device }}{{ partition_number }}"
+        fstype: "{{ filesystem_type }}"
+        opts: defaults
+        state: present
+
+    - name: Adjust permissions on the NFS export directory
+      file:
+        path: "{{ nfs_export_dir }}"
+        owner: nobody
+        group: nogroup
+        mode: '0777'
+      when: not ansible_check_mode
+
+    - name: Configure NFS exports
+      lineinfile:
+        path: /etc/exports
+        line: "{{ nfs_export_dir }} {{ nfs_network }}(rw,sync,no_subtree_check)"
+        state: present
+        create: yes
+      notify: reload_nfs
+
+    - name: Start and enable NFS server
+      systemd:
+        name: nfs-kernel-server
+        state: started
+        enabled: yes
+
+    - name: Configure firewall to allow NFS (Optional)
+      when: configure_firewall
+      block:
+        - name: Allow NFS service through UFW
+          ufw:
+            rule: allow
+            to_ip: any
+            port: nfs
+            proto: tcp
+        - name: Enable UFW
+          ufw:
+            state: enabled
+
+  handlers:
+    - name: update_facts
+      setup:
+        gather_subset:
+          - hardware
+
+    - name: reload_nfs
+      command: exportfs -ra
+      notify: restart_nfs
+
+    - name: restart_nfs
+      systemd:
+        name: nfs-kernel-server
+        state: restarted

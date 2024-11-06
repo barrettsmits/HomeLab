@@ -1,12 +1,16 @@
-variable "proxmox_url" {
-  default = "https://192.168.1.205:8006/api2/json"  # your Proxmox Host url. use 
+variable "proxmox_ip" {
+  default = "192.168.1.205" # set your node ipaddress
 }
+# variable "proxmox_url" {
+#   default = "https://192.168.1.205:8006/api2/json"  # your Proxmox Host url. use 
+# }
 variable "proxmox_username" {
   default = "root@pam"
 }
 variable "proxmox_password" {
   description = "Password to authenticate to proxmox"
-  default     = "" # Used HCL Vault, can be clear text if needed
+  sensitive = true
+  default     = env("PROXMOX_PASS")
 }
 variable "proxmox_connection" {
   description = "true/false insecure_connection to proxmox"
@@ -20,8 +24,9 @@ variable "connection_username" {
   default     = "ansibleadmin" # set your ssh username 
 }
 variable "connection_password" {
+  sensitive = true
   description = "password to connect to vm during build process"
-  default     = "" # Used HCL Vault, can be clear text if needed
+  default     = env("DEFAULT_PASS")
 }
 variable "timeout" {
   description = "average build time is around 11 minutes, 25 minutes should be enough"

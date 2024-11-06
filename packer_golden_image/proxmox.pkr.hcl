@@ -2,25 +2,24 @@ locals {
   linux_notes               = "Template based on ${var.os_family}-${var.os_version} with CIS hardening, built using packer on {{ isotime \"2006-01-02\" }} at {{isotime \"3:04PM\"}}"
   win_notes                 = "Template based on ${var.os_family} ${var.os_version}, built using packer on {{ isotime \"2006-01-02\" }} at {{isotime \"3:04PM\"}}"
   vm_name                   = "${var.os_family}-${var.os_version}"
-  vm_id                     = "9998"
-  ver-num                   = "v2"
-  vault_connection_password = vault("/secret/data/packer", "vault_ssh_connection")
-  vault_proxmox_password    = vault("/secret/data/packer", "vault_proxmox_password")
+  vm_id                     = "9999"
+  ver-num                   = "v1"
+  proxmox_url               = "https://${var.proxmox_ip}:8006/api2/json"  # your Proxmox Host url. use 
 }
 
 ## ubuntu source
 source "proxmox-iso" "ubuntu" {
   # Proxmox settings
-  proxmox_url              = var.proxmox_url
+  proxmox_url              = local.proxmox_url
   username                 = var.proxmox_username
-  password                 = local.vault_proxmox_password
+  password                 = var.proxmox_password   //local.vault_proxmox_password
   insecure_skip_tls_verify = var.proxmox_connection
   node                     = var.proxmox_node
 
   # VM Settings
   unmount_iso            = true
   ssh_username           = var.connection_username
-  ssh_password           = local.vault_connection_password
+  ssh_password           = var.connection_password  //local.vault_connection_password
   ssh_timeout            = var.timeout
   ssh_handshake_attempts = "100"
   ssh_port               = "22"
@@ -67,8 +66,21 @@ build {
   provisioner "shell" {
     inline = [
       "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do echo 'Waiting for cloud-init...'; sleep 1; done",
-      "ls /"
+      
+      "ls /",
+      
+      "sudo rm -rf /etc/netplan/00-installer-config.yaml",
+
+      "sudo rm -rf /etc/cloud/cloud.cfg.d/99-installer.cfg",
+
+      "sudo rm -rf /etc/cloud/cloud.cfg.d/subiquity-disable-cloudinit-networking.cfg",
+
+      "sudo truncate -s 0 /etc/machine-id",
+
+      "exit 0"
+
     ]
+    pause_before = "20s"
   }
 
   provisioner "ansible" {
@@ -77,7 +89,7 @@ build {
 
   post-processor "shell-local" {
     inline = [
-      "ssh root@192.168.1.205 'qm set ${local.vm_id} --delete ide3 && qm set ${local.vm_id} --delete ide2'"
+      "ssh root@${var.proxmox_ip} 'qm set ${local.vm_id} --delete ide3 && qm set ${local.vm_id} --delete ide2'"
     ]
   }
 }
