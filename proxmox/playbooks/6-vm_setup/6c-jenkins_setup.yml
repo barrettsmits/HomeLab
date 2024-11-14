@@ -4,7 +4,7 @@
   become_user: ansibleadmin
   become: true
   vars:
-    become_password: "THINunitynoorange"
+    become_password: "{{ become_password }}"
   tasks:
     # UPDATE HOSTNAME FROM CLONED TEMPLATE
     - name: Set jenkins hostname via systemd
