@@ -127,3 +127,32 @@
         rule: allow
         port: "22"
         proto: tcp
+    
+    - name: Open nginx port
+      ansible.builtin.ufw:
+        state: enabled
+        rule: allow
+        port: "8080"
+        proto: tcp
+
+    - name: Open Jellyfin port
+      ansible.builtin.ufw:
+        state: enabled
+        rule: allow
+        port: "8096"
+        proto: tcp
+
+    - name: Open FoundryVTT port
+      ansible.builtin.ufw:
+        state: enabled
+        rule: allow
+        port: "32000"
+        proto: tcp
+
+
+    - name: Open Cockpit port
+      ansible.builtin.ufw:
+        state: enabled
+        rule: allow
+        port: "9090"
+        proto: tcp

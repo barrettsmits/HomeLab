@@ -9,9 +9,9 @@ cloud_init_force_download: false
 cloud_init_public_keys: "{{ vault_ssh_pubkey }}"
 cloud_init_ci_password: "{{ vault_ci_password }}"
 cloud_init_node_target: proxmox
-cloud_init_img_download_version: jammy
-cloud_init_img_target_name: jammy-server-cloudimg-amd64
-cloud_init_img_source_url: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
+cloud_init_img_download_version: noble
+cloud_init_img_target_name: noble-server-cloudimg-amd64 #jammy-server-cloudimg-amd64
+cloud_init_img_source_url: "https://cloud-images.ubuntu.com/noble/current/{{ cloud_init_img_target_name }}.img" # https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
 cloud_init_img_target_path: /tmp
 cloud_init_img_download_target_path: /tmp
 cloud_init_storage_target: LVM-Prime # Change this to match existing storage on Proxmox.

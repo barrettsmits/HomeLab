@@ -1,0 +1,40 @@
+# All Hosts update
+---
+- name: Update all production hosts
+  gather_facts: yes
+  hosts: production
+  become: true
+  vars_files:
+    - "{{ ansible_env.HOME }}/secrets/creds.yml"
+  vars:
+    become_password: "{{ vault_become_password }}"
+  tasks: 
+    - name: "Update apt cache"
+      apt:
+        update_cache: yes
+    
+    - name: Gather the package facts
+      ansible.builtin.package_facts:
+        manager: auto
+
+    - name: "Upgrade all packages"
+      apt:
+        name: "{{ item }}"
+        state: latest
+      loop: "{{ ansible_facts.packages | list }}"
+      register: upgrade_output
+      no_log: "{{ not ansible_verbosity | int >= 1 }}"
+    
+    - name: Upgrade the OS
+      apt:
+        upgrade: dist
+
+    - name: "Remove old packages"
+      apt:
+        autoclean: yes
+    
+    - name: Remove dependencies that are no longer required
+      apt:
+        autoremove: yes
+
+    

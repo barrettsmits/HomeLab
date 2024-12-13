@@ -18,8 +18,9 @@
         update_cache: yes
         install_recommends: no
       items:
-        - "openjdk-17-jre"
+        #- "openjdk-17-jre"
         - "openjdk-17-jdk"
+        - "fontconfig openjdk-17-jre"
     
     - name: Add APT key
       apt_key:
