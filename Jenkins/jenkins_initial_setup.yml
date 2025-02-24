@@ -1,0 +1,107 @@
+# jenkins_initial_setup.yml
+- name: Initial Jenkins VM Setup
+  hosts: jenkins_prd
+  become_method: sudo
+  become_user: root
+  become: true
+  tasks:
+    # BASIC SYSTEM SETUP
+    - name: Set jenkins hostname via systemd
+      ansible.builtin.hostname:
+        name: jenkins-prd
+        use: systemd
+    
+    - name: Update all packages
+      apt:
+        update_cache: yes
+        upgrade: yes
+        
+    - name: Install essential system packages
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - curl
+        - wget
+        - git
+        - unzip
+        - htop
+        - net-tools
+        - python3-pip
+        - software-properties-common
+    
+    # JAVA INSTALLATION
+    - name: Install JRE and JDK
+      apt: 
+        name: "{{ item }}"
+        update_cache: yes
+        install_recommends: no
+      loop:
+        - "openjdk-17-jdk"
+        - "fontconfig"
+        - "openjdk-17-jre"
+    
+    # JENKINS INSTALLATION
+    - name: Add APT key
+      apt_key:
+        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+   
+    - name: Copy jenkins.list to sources
+      copy:
+        content: deb https://pkg.jenkins.io/debian-stable binary/
+        dest: /etc/apt/sources.list.d/jenkins.list
+    
+    - name: Install Jenkins
+      apt: 
+        name: jenkins
+        update_cache: yes
+        install_recommends: no
+    
+    # FIREWALL SETUP
+    - name: Open Jenkins port
+      ansible.builtin.ufw:
+        state: enabled
+        rule: allow
+        port: "8080"
+        proto: tcp
+
+    - name: Open SSH port
+      ansible.builtin.ufw:
+        state: enabled
+        rule: allow
+        port: "22"
+        proto: tcp
+        
+    # SYSTEM HARDENING
+    - name: Disable root login via SSH
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PermitRootLogin'
+        line: 'PermitRootLogin no'
+      notify: restart sshd
+
+    - name: Set up automatic security updates
+      apt:
+        name: unattended-upgrades
+        state: present
+
+    # MONITORING SETUP
+    - name: Install node exporter for Prometheus monitoring
+      apt:
+        name: prometheus-node-exporter
+        state: present
+
+    # BACKUP DIRECTORY SETUP
+    - name: Create Jenkins backup directory
+      file:
+        path: /var/backup/jenkins
+        state: directory
+        owner: jenkins
+        group: jenkins
+        mode: '0755'
+
+  handlers:
+    - name: restart sshd
+      service:
+        name: sshd
+        state: restarted 

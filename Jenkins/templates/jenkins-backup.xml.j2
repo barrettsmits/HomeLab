@@ -1,0 +1,141 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job">
+  <description>Pipeline for backing up Jenkins configuration and data</description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+          <name>BACKUP_RETENTION_DAYS</name>
+          <description>Number of days to keep backups</description>
+          <defaultValue>30</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>NOTIFICATION_EMAIL</name>
+          <description>Email address for notifications</description>
+          <defaultValue>admin@devopsfables.net</defaultValue>
+        </hudson.model.StringParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+  </properties>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps">
+    <script>
+pipeline {
+    agent any
+    
+    stages {
+        stage('Prepare Backup') {
+            steps {
+                sh '''
+                    # Create timestamp for backup
+                    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+                    echo "Starting backup at $TIMESTAMP"
+                    
+                    # Create backup directory if it doesn't exist
+                    mkdir -p /var/backup/jenkins/$TIMESTAMP
+                '''
+            }
+        }
+        
+        stage('Backup Jenkins Home') {
+            steps {
+                sh '''
+                    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+                    BACKUP_DIR="/var/backup/jenkins/$TIMESTAMP"
+                    
+                    # Stop Jenkins temporarily for consistent backup
+                    systemctl stop jenkins
+                    
+                    # Backup JENKINS_HOME directory
+                    tar -czf $BACKUP_DIR/jenkins_home.tar.gz /var/lib/jenkins/
+                    
+                    # Start Jenkins again
+                    systemctl start jenkins
+                '''
+            }
+        }
+        
+        stage('Backup Plugins') {
+            steps {
+                sh '''
+                    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+                    BACKUP_DIR="/var/backup/jenkins/$TIMESTAMP"
+                    
+                    # Create plugins list
+                    ls /var/lib/jenkins/plugins/*.jpi | awk -F&apos;/&apos; &apos;{print $NF}&apos; | sed &apos;s/\\.jpi$//&apos; > $BACKUP_DIR/plugins.txt
+                    
+                    # Backup plugin binaries
+                    tar -czf $BACKUP_DIR/plugins.tar.gz /var/lib/jenkins/plugins/
+                '''
+            }
+        }
+        
+        stage('Backup Jobs') {
+            steps {
+                sh '''
+                    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+                    BACKUP_DIR="/var/backup/jenkins/$TIMESTAMP"
+                    
+                    # Backup job configurations
+                    tar -czf $BACKUP_DIR/jobs.tar.gz /var/lib/jenkins/jobs/
+                '''
+            }
+        }
+        
+        stage('Backup System Config') {
+            steps {
+                sh '''
+                    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+                    BACKUP_DIR="/var/backup/jenkins/$TIMESTAMP"
+                    
+                    # Backup system configurations
+                    cp /var/lib/jenkins/config.xml $BACKUP_DIR/
+                    cp /var/lib/jenkins/jenkins.model.JenkinsLocationConfiguration.xml $BACKUP_DIR/ || true
+                    cp /var/lib/jenkins/hudson.plugins.git.GitTool.xml $BACKUP_DIR/ || true
+                    
+                    # Backup credentials (encrypted)
+                    cp -r /var/lib/jenkins/credentials.xml $BACKUP_DIR/ || true
+                    cp -r /var/lib/jenkins/secrets $BACKUP_DIR/
+                '''
+            }
+        }
+        
+        stage('Cleanup Old Backups') {
+            steps {
+                sh '''
+                    # Remove backups older than retention period
+                    find /var/backup/jenkins/ -type d -mtime +${BACKUP_RETENTION_DAYS} -exec rm -rf {} \\;
+                '''
+            }
+        }
+    }
+    
+    post {
+        always {
+            emailext (
+                subject: "Jenkins Backup Pipeline: ${currentBuild.currentResult}",
+                body: """
+                    Pipeline Status: ${currentBuild.currentResult}
+                    Duration: ${currentBuild.durationString}
+                    
+                    Backup Location: /var/backup/jenkins/
+                    Retention Period: ${params.BACKUP_RETENTION_DAYS} days
+                    
+                    Check the build log at: ${env.BUILD_URL}
+                """,
+                to: '${params.NOTIFICATION_EMAIL}',
+                attachLog: true
+            )
+        }
+    }
+}
+    </script>
+    <sandbox>true</sandbox>
+  </definition>
+  <triggers>
+    <hudson.triggers.TimerTrigger>
+      <spec>H H * * 0</spec> <!-- Run once per week on Sunday -->
+    </hudson.triggers.TimerTrigger>
+  </triggers>
+  <disabled>false</disabled>
+</flow-definition>

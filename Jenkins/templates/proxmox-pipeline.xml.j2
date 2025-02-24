@@ -1,0 +1,205 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job">
+  <description>Pipeline for managing Proxmox infrastructure</description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <!-- VM Backup Parameters -->
+        <hudson.model.StringParameterDefinition>
+          <name>VM_IDS</name>
+          <description>Space-separated list of VM IDs to backup (leave empty for all VMs)</description>
+          <defaultValue>1300 1400 2000 2100 3000 3300</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>BACKUP_RETENTION_DAYS</name>
+          <description>Number of days to keep backups</description>
+          <defaultValue>30</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.ChoiceParameterDefinition>
+          <name>BACKUP_MODE</name>
+          <description>Backup mode to use</description>
+          <choices class="java.util.Arrays$ArrayList">
+            <a class="string-array">
+              <string>snapshot</string>
+              <string>suspend</string>
+              <string>stop</string>
+            </a>
+          </choices>
+        </hudson.model.ChoiceParameterDefinition>
+        
+        <!-- Infrastructure Update Parameters -->
+        <hudson.model.BooleanParameterDefinition>
+          <name>UPDATE_CONTAINERS</name>
+          <description>Update LXC containers</description>
+          <defaultValue>true</defaultValue>
+        </hudson.model.BooleanParameterDefinition>
+        <hudson.model.BooleanParameterDefinition>
+          <name>UPDATE_VMS</name>
+          <description>Update VMs (requires qemu-guest-agent)</description>
+          <defaultValue>true</defaultValue>
+        </hudson.model.BooleanParameterDefinition>
+        
+        <!-- Notification Parameters -->
+        <hudson.model.StringParameterDefinition>
+          <name>NOTIFICATION_EMAIL</name>
+          <description>Email address for notifications</description>
+          <defaultValue>barrett.smits@gmail.com</defaultValue>
+        </hudson.model.StringParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+  </properties>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps">
+    <script>
+pipeline {
+    agent any
+    
+    stages {
+        stage('Backup VMs') {
+            steps {
+                sh '''
+                    # Use parameters for backup configuration
+                    if [ -n "${VM_IDS}" ]; then
+                        ssh -v ansibleadmin@proxmox.devopsfables.net "sudo vzdump ${VM_IDS} --compress zstd --mode ${BACKUP_MODE}"
+                    else
+                        ssh ansibleadmin@proxmox.devopsfables.net "sudo vzdump --all --compress zstd --mode ${BACKUP_MODE}"
+                    fi
+                    
+                    # Remove old backups based on retention parameter
+                    find /var/lib/vz/dump -type f -mtime +${BACKUP_RETENTION_DAYS} -name '*.vma.zst' -delete
+                '''
+            }
+        }
+        
+        stage('Health Check') {
+            steps {
+                // Run health checks on Proxmox host
+                sh '''
+                    # Check system resources
+                    ssh ansibleadmin@proxmox.devopsfables.net "sudo df -h"  # Check disk space
+                    ssh ansibleadmin@proxmox.devopsfables.net "sudo free -h"  # Check memory usage
+                    ssh ansibleadmin@proxmox.devopsfables.net "sudo uptime"  # Check load averages
+                    
+                    # Check cluster status if applicable
+                    ssh ansibleadmin@proxmox.devopsfables.net "sudo pvecm status" || echo "Not a cluster node"
+                    
+                    # Check running VMs/containers
+                    ssh ansibleadmin@proxmox.devopsfables.net "sudo qm list"  # List VMs
+                    ssh ansibleadmin@proxmox.devopsfables.net "sudo pct list"  # List containers
+                    
+                    # Check storage health
+                    ssh ansibleadmin@proxmox.devopsfables.net "sudo pvesm status"
+                    
+                    # Check for any failed services
+                    ssh ansibleadmin@proxmox.devopsfables.net "sudo systemctl list-units --state=failed"
+                    
+                    # Check logs for errors
+                    ssh ansibleadmin@proxmox.devopsfables.net "sudo journalctl -p err -n 50 --no-pager"
+                '''
+            }
+        }
+        
+        stage('Update Infrastructure') {
+            steps {
+                retry(3) {
+                    timeout(time: 30, unit: 'MINUTES') {
+                        sh '''
+                            # Update package lists and upgrade packages on Proxmox host
+                            ssh ansibleadmin@proxmox.devopsfables.net "sudo apt update &amp;&amp; apt upgrade -y" || {
+                                echo "Package update failed, checking for lock files..."
+                                ssh ansibleadmin@proxmox.devopsfables.net "sudo rm -f /var/lib/apt/lists/lock /var/cache/apt/archives/lock /var/lib/dpkg/lock*"
+                                ssh ansibleadmin@proxmox.devopsfables.net "sudo dpkg --configure -a"
+                                exit 1
+                            }
+                            
+                            # Update container templates
+                            ssh ansibleadmin@proxmox.devopsfables.net "sudo pveam update"
+                            
+                            # Conditionally update containers
+                            if [ "${UPDATE_CONTAINERS}" = "true" ]; then
+                                ssh ansibleadmin@proxmox.devopsfables.net "sudo for ct in \$(pct list | tail -n +2 | cut -f1 -d &apos; &apos;); do pct exec \$ct -- apt update &amp;&amp; pct exec \$ct -- apt upgrade -y; done"
+                            fi
+                            
+                            # Conditionally update VMs
+                            if [ "${UPDATE_VMS}" = "true" ]; then
+                                ssh ansibleadmin@proxmox.devopsfables.net "sudo for vm in \$(qm list | tail -n +2 | cut -f1 -d &apos; &apos;); do qm guest cmd \$vm apt-get update || true; qm guest cmd \$vm apt-get upgrade -y || true; done"
+                            fi
+                            
+                            # Cleanup
+                            ssh ansibleadmin@proxmox.devopsfables.net "sudo apt autoremove -y  &amp;&amp; apt clean"
+                        '''
+                    }
+                }
+            }
+        }
+        
+        stage('Performance Metrics') {
+            steps {
+                sh '''
+                    # Collect CPU, Memory, and I/O statistics
+                    ssh ansibleadmin@proxmox.devopsfables.net "sudo sar -u 1 5"  # CPU usage
+                    ssh ansibleadmin@proxmox.devopsfables.net "sudo iostat -x 1 5"  # I/O statistics
+                    
+                    # VM Performance metrics
+                    ssh ansibleadmin@proxmox.devopsfables.net "sudo for vm in \$(qm list | tail -n +2 | cut -f1 -d' '); do echo \"VM \$vm stats:\"; qm monitor \$vm info balloon cpu status 2>/dev/null || true; done"
+                    
+                    # Network statistics
+                    ssh ansibleadmin@proxmox.devopsfables.net "sudo iftop -t -s 5"
+                '''
+            }
+        }
+        
+        stage('Security Audit') {
+            steps {
+                sh '''
+                    # Check for failed SSH attempts
+                    ssh ansibleadmin@proxmox.devopsfables.net "sudo grep 'Failed password' /var/log/auth.log | tail -n 10"
+                    
+                    # Check for unusual sudo usage
+                    ssh ansibleadmin@proxmox.devopsfables.net "sudo grep sudo /var/log/auth.log | tail -n 10"
+                    
+                    # List listening ports
+                    ssh ansibleadmin@proxmox.devopsfables.net "sudo ss -tulpn"
+                    
+                    # Check firewall status
+                    ssh ansibleadmin@proxmox.devopsfables.net "sudo pve-firewall status"
+                '''
+            }
+        }
+    }
+    
+    post {
+        always {
+            emailext (
+                subject: "Proxmox Infrastructure Pipeline: ${currentBuild.currentResult}",
+                body: """
+                    Pipeline Status: ${currentBuild.currentResult}
+                    Duration: ${currentBuild.durationString}
+                    
+                    Parameters Used:
+                    - VM IDs: ${params.VM_IDS ?: 'All VMs'}
+                    - Backup Mode: ${params.BACKUP_MODE}
+                    - Retention Days: ${params.BACKUP_RETENTION_DAYS}
+                    - Updated Containers: ${params.UPDATE_CONTAINERS}
+                    - Updated VMs: ${params.UPDATE_VMS}
+                    
+                    Check the build log at: ${env.BUILD_URL}
+                """,
+                to: '${params.NOTIFICATION_EMAIL}',
+                attachLog: true
+            )
+            
+            cleanWs()
+        }
+    }
+}
+    </script>
+    <sandbox>true</sandbox>
+  </definition>
+  <triggers>
+    <hudson.triggers.TimerTrigger>
+        <spec>H H 5,20 * *</spec> <!-- Runs once a day on the 5th and 20th of every month -->
+    </hudson.triggers.TimerTrigger>
+  </triggers>
+  <disabled>false</disabled>
+</flow-definition> 

@@ -1,0 +1,108 @@
+# jenkins_configuration.yml
+- name: Configure Jenkins
+  hosts: jenkins_prd
+  become_user: root
+  become: true
+  vars_files:
+    - ~/secrets/creds.yml
+    # become_password: "{{ become_password }}"
+  tasks:
+    # Add these pre-tasks at the beginning
+    - name: Install python3-pip
+      apt:
+        name: python3-pip
+        state: present
+      become: true
+
+    - name: Install python-jenkins module
+      pip:
+        name: python-jenkins
+        state: present
+      become: true
+
+    # JENKINS STARTUP CHECK
+    - name: Wait for Jenkins to start up
+      uri:
+        url: http://localhost:8080
+        status_code:
+          - 200
+          - 403  # Adding 403 as acceptable status code since it means Jenkins is up but requires auth
+      register: result
+      until: result.status in [200, 403]
+      retries: 60
+      delay: 5
+
+    - name: Check if initial admin password file exists
+      stat:
+        path: /var/lib/jenkins/secrets/initialAdminPassword
+      register: initial_password_file
+
+    - name: Get Jenkins initial admin password from file
+      command: cat /var/lib/jenkins/secrets/initialAdminPassword
+      register: jenkins_admin_password
+      changed_when: false
+      when: initial_password_file.stat.exists
+      ignore_errors: true
+
+    - name: Use vault password if initial password doesn't exist
+      set_fact:
+        jenkins_admin_password:
+          stdout: "{{ vault_jenkins_admin_password }}"
+      when: not initial_password_file.stat.exists or jenkins_admin_password is failed
+
+    #JENKINS PLUGINS
+    - name: Install Jenkins plugins
+      jenkins_plugin:
+        name: "{{ item }}"
+        jenkins_home: /var/lib/jenkins
+        url_username: admin
+        url_password: "{{ jenkins_admin_password.stdout }}"
+      with_items:
+        - workflow-aggregator  # Pipeline plugin
+        - git
+        - ansible
+        - credentials
+        - ssh-credentials
+        - AnsiColor
+        - docker
+        - docker-workflow
+        - kubernetes
+        - blueocean
+        - matrix-auth
+        - role-strategy
+        - timestamper
+        - pipeline-stage-view
+        - junit
+        - warnings-ng
+        - dashboard-view
+
+    # JENKINS SECURITY
+    - name: Configure Jenkins security
+      jenkins_script:
+        script: |
+          import jenkins.model.*
+          import hudson.security.*
+          def instance = Jenkins.getInstance()
+          def strategy = new FullControlOnceLoggedInAuthorizationStrategy()
+          instance.setAuthorizationStrategy(strategy)
+          instance.save()
+        user: admin
+        password: "{{ jenkins_admin_password.stdout }}"
+
+    # PIPELINE SETUP
+    - name: Create Proxmox management pipeline
+      jenkins_job:
+        config: "{{ lookup('template', 'templates/proxmox-pipeline.xml.j2') }}"
+        name: "proxmox-management"
+        password: "{{ jenkins_admin_password.stdout }}"
+        url: http://localhost:8080
+        user: admin
+
+    # BACKUP CONFIGURATION
+    - name: Configure Jenkins backup job
+      jenkins_job:
+        config: "{{ lookup('template', 'templates/jenkins-backup.xml.j2') }}"
+        name: "jenkins-backup"
+        password: "{{ jenkins_admin_password.stdout }}"
+        url: http://localhost:8080
+        user: admin 
