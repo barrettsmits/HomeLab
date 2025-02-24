@@ -1,88 +1,82 @@
 # Barrett's Ansible + Proxmox Homelab Automation
 
-## What is this?
-This repo contains the Ansible playbooks and configuration used to manage and automate my Proxmox based homelab. 
+## Overview
+This repository contains Ansible playbooks and configuration for managing and automating a Proxmox-based homelab environment. It leverages the [proxmox](https://docs.ansible.com/ansible/latest/modules/proxmox_module.html) and [proxmox_kvm](https://docs.ansible.com/ansible/latest/modules/proxmox_kvm_module.html) Ansible modules.
 
-For Proxmox, it makes use of the [proxmox](https://docs.ansible.com/ansible/latest/modules/proxmox_module.html) [proxmox_nic] (https://docs.ansible.com/ansible/latest/collections/community/general/proxmox_nic_module.html), and [proxmox_kvm](https://docs.ansible.com/ansible/latest/modules/proxmox_kvm_module.html) modules.
+## Prerequisites
+- [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/index.html)
+- [Python >= 3.10](https://www.python.org/downloads/)
+- Python packages:
+  - [proxmoxer](https://pypi.org/project/proxmoxer/)
+  - [requests](https://pypi.org/project/requests/)
 
-For Vault, it makes use of the [ansible-vault](https://github.com/ansible-community/ansible-vault) module. 
+## Quick Start
+1. [Clone this repository](https://github.com/barrettsmits/HomeLab)
+2. Install Ansible and other prerequisites
+3. Run the initial setup playbook for your Ansible host:
+   ```bash
+   ansible-playbook ./playbooks/1-localhost_setup.yml
+   ```
 
+## Configuration
 
-## Requirements
-* [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/index.html)
-* [python >= 3.10](https://www.python.org/downloads/)
-* [proxmoxer](https://pypi.org/project/proxmoxer/)
-* [requests](https://pypi.org/project/requests/)
+### Directory Structure
+- `ansible.cfg` - Core Ansible configuration (located in `/etc/ansible`)
+- `hosts` - Inventory file defining servers and groups (located in `/etc/ansible`)
+- `creds.yml` - Encrypted credentials file (must be created)
+- Example configurations can be found in the `Examples` folder
 
+### Setting Up Credentials
+1. Create an encrypted credentials file:
+   ```bash
+   ansible-vault create creds.yml
+   ```
 
-## Installation
-[Clone this repo](https://github.com/barrettsmits/HomeLab)
-Ensure you also have [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/index.html) (and all other requirements) installed
-The first ansible playbook, is a setup for localhost, or the ansible host, depending on your needs. If the playbooks are ran in order, there is a major reduction in failures.  
+2. Add the following content:
+   ```yaml
+   ---
+   vault_api_password: 'PROXMOX_HOST_PASSWORD'
+   vault_prometheus_password: 'Prometheus_Password'
+   ```
 
-## The main points
-* Configuration is set in `ansible.cfg`. This exists only to tell Ansible where to look for server definitions (inventory). Located in /etc/ansible
-    * See Examples folder for example ansible.cfg, hosts, and unencypted creds.yml files. These example files can be used as a starting point or reference.
-* Servers (inventory) are defined in the `hosts` file and are placed in "groups" defined by `[]`. Located in /etc/ansible 
-* `creds.yml` will need to be created via `ansible-vault create` in the appropriate folder and will need to be configured like so:
-* See example [creds.yml](proxmox/examples/creds.yml.example) file
+## Playbooks
 
+### 1. localhost_setup.yml
+- Configures the Ansible host with all required dependencies
+- Only needs to be run once per Ansible host
+- Can be used for both local and remote Ansible host setup
+- Run with:
+  ```bash
+  ansible-playbook ./playbooks/1-localhost_setup.yml
+  ```
 
-ansible-vault create creds.yml:
+### Additional Playbooks
+- Proxmox VE setup
+- VM creation (Prometheus, Portainer, Vault)
+- K3s containerization host configuration
 
+## HomeLab Components
+- Proxmox VE host
+- Multiple VMs:
+  - Prometheus monitoring
+  - Portainer container management
+  - HashiCorp Vault
+  - K3s cluster nodes
+
+## Troubleshooting
+
+### WSL2 Installation Issues
+If you encounter the following error:
 ```
----
-vault_api_password: 'PROXMOX_HOST_PASSWORD'
-vault_prometheus_password: 'Prometheus_Password'
+Error: supermin: failed to find a suitable kernel (host_cpu=x86_64)
 ```
 
-The primary goal of this is to automate my homelab, this is a work in process and will be updated as I work on my HomeLab.
-
-## HomeLab details
-Proxmox VE HomeLab setup using Ansible.
-
-Initial config for localhost (Ansible host), Proxmox VE Host, multiple VMs (Prometheus, Portainer, Vault) and hosts for K3s containerization.
-
-## 1-localhost_setup 
-* Configures the localhost that is running ansible code to meet the requirements to run furtur playbooks.
-* Should only need to be ran once, but can be used to setup a remote Ansible host as well.
-* Run `ansible-playbook ./playbooks/1-localhost_setup.yml` to run the initial playbook. 
-* 
-
-## 2-proxmox_host_setup
-* Configures proxmox VE Host, 
-* 
-
-## 3-proxmox_api_token
-* Configures proxmox API Token if one doesn't exist.  
-* 
-
-## 4-packer_proxmox_template
-* Creates a Packer template on Proxmox for creating VMs
-* 
-
-## 5-proxmox_vm_init
-* Intiiates default VMs if they doesn't exist. 
-* 
-
-## 6-prometheus_observer_setup
-* Configures proxmox VE Host, 
-* 
-
-
-Initiates Proxmox VE setup; creating groups, users, permisisons, pools, and the option to create an API key if it doesn't exist. (Output to terminal). 
-
-
-
-
-Ansible Playbook does not have a check for localhost requirements, if local requirements are not met, run playbook: 1-localhost_setup.yml
-
-
-
-NOTE for WSL2 installs of Ansible
-Possible error may be encountered: 
-
-Error: supermin: failed to find a suitable kernel (host_cpu=x86_64).
-
-Fix:
+Fix by installing the generic Linux kernel:
+```bash
 sudo apt-get install linux-image-generic
+```
+
+## Notes
+- Run playbooks in the specified order to minimize failures
+- The configuration automatically sets up Proxmox groups, users, permissions, pools, and optionally creates an API key
+- Check the Examples folder for reference configuration files

@@ -1,0 +1,25 @@
+---
+- name: Remove a template from Proxmox
+  hosts: proxmox_prd
+  gather_facts: true
+  vars_files:
+    - ~/secrets/creds.yml
+  vars:
+    var_api_host: proxmox
+    var_api_user: "ansibleadmin@pam"
+    var_api_token_id: "{{ vault_ansible_api_token_id }}"
+    var_api_token_secret: "{{ vault_ansible_api_token_secret }}"
+  tasks:
+    - name: request template vmid
+      input:
+        prompt: "Enter the VMID of the template to remove"
+        default: "{{ var_vmid }}"
+      register: var_vmid
+    - name: Remove the template
+      proxmox_kvm:
+        api_host: "{{ var_api_host }}"
+        api_user: "{{ var_api_user }}"
+        api_token_id: "{{ var_api_token_id }}"
+        api_token_secret: "{{ var_api_token_secret }}"
+        vmid: "{{ var_vmid }}"
+        state: absent
