@@ -1,17 +1,17 @@
 ---
 # Create users based on existing vars.
-
 - name: Set fact for user existence
   ansible.builtin.set_fact:
-    user_json: "{{ userlist.stdout | from_json }}"
+    user_json: "{{ (userlist.stdout | from_json).users | dict2items | map(attribute='value') | list }}"
   ignore_errors: true
   no_log: true
 
-- name: 'Check if user exists: {{ item.username }}'
+- name: Check if {{ item.username }} exists
   ansible.builtin.set_fact:
     user_exists: "{{ user_json | json_query(user_query) | length > 0 }}"
   vars:
     user_query: "[?userid=='{{ item.username }}@{{ proxmox_management_user_realm }}']"
+  loop: "{{ user_json }}"
   register: command_result
   failed_when: not "'FAILED' in command_result.stderr"
 
@@ -23,9 +23,10 @@
     groups: sudo
     append: true
   when: not user_exists
+  ignore_errors: true
 
 - name: Create Proxmox user if does not exists
-  ansible.builtin.command: >
-    pveum useradd {{ item.username }}@{{ proxmox_management_user_realm }}
-    --password {{ item.password }} --email {{ item.email }} --group admin
+  ansible.builtin.command: pveum useradd {{ item.username }}@{{ proxmox_management_user_realm }} --password {{ item.password }} --email {{ item.email }} --group admin
   when: not user_exists
+  loop: "{{ user_json }}"
+  ignore_errors: true

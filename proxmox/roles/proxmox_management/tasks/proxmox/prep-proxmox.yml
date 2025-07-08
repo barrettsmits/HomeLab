@@ -31,6 +31,18 @@
       bookworm pve-enterprise
     state: absent
 
+- name: Add Proxmox GPG key
+  ansible.builtin.apt_key:
+    url: http://download.proxmox.com/debian/proxmox-release-bookworm.gpg
+    state: present
+
+- name: Install prerequisites
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+    state: present
+
 - name: Remove ceph subscription repos
   ansible.builtin.apt_repository:
     repo: >
@@ -47,7 +59,7 @@
 - name: Switch to community repos
   ansible.builtin.apt_repository:
     repo: >
-      deb http://download.proxmox.com/debian/ceph-reef  bookworm no-subscription
+      deb http://download.proxmox.com/debian/ceph-reef  bookworm no-subscription binary-amd64
     state: present
 
 - name: Ensure Proxmox is updated

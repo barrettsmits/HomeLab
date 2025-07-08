@@ -1,0 +1,43 @@
+---
+- name: Distribute Jenkins SSH keys to managed hosts
+  hosts: production  # Or specify a group of hosts that Jenkins will manage
+  become: true
+  tasks:
+    - name: Ensure jenkins user exists on remote hosts
+      user:
+        name: jenkins
+        shell: /bin/bash
+        create_home: yes
+        system: yes
+        state: present
+
+    - name: Create .ssh directory for jenkins user
+      file:
+        path: /home/jenkins/.ssh
+        state: directory
+        owner: jenkins
+        group: jenkins
+        mode: '0700'
+
+    - name: Copy jenkins public key from Jenkins server
+      shell: cat ~/.ssh/jenkins_key.pub
+      register: jenkins_pubkey
+      delegate_to: 192.168.1.94  # Your Jenkins server hostname
+      become: true
+      become_user: root
+      changed_when: false
+
+    - name: Add jenkins public key to authorized_keys
+      authorized_key:
+        user: jenkins
+        state: present
+        key: "{{ jenkins_pubkey.stdout }}"
+
+    - name: Configure sudoers for jenkins user
+      lineinfile:
+        path: /etc/sudoers.d/jenkins
+        line: "jenkins ALL=(ALL) NOPASSWD: ALL"
+        state: present
+        mode: '0440'
+        create: yes
+        validate: 'visudo -cf %s' 

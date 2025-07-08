@@ -1,0 +1,109 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@1316.vd2290d3341a_f">
+  <description>Simple pipeline for system monitoring and maintenance</description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+          <name>REMOTE_HOST</name>
+          <description>Remote host to monitor</description>
+          <defaultValue>192.168.1.205</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>REMOTE_USER</name>
+          <description>Remote user for SSH connection</description>
+          <defaultValue>jenkins</defaultValue>
+        </hudson.model.StringParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+  </properties>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps">
+    <script>
+pipeline {
+    agent any
+    
+    stages {
+        stage('System Info') {
+            steps {
+                sshagent(['jenkins-ssh-key']) {
+                    sh '''
+                        ssh ${REMOTE_USER}@${REMOTE_HOST} '
+                            echo "=== System Information ==="
+                            uname -a
+                            echo "=== Memory Usage ==="
+                            free -h
+                            echo "=== Disk Usage ==="
+                            df -h
+                        '
+                    '''
+                }
+            }
+        }
+        
+        stage('Network Check') {
+            steps {
+                sshagent(['jenkins-ssh-key']) {
+                    sh '''
+                        ssh ${REMOTE_USER}@${REMOTE_HOST} '
+                            echo "=== Network Interfaces ==="
+                            ip addr show
+                            echo "=== Network Connectivity ==="
+                            ping -c 4 8.8.8.8
+                        '
+                    '''
+                }
+            }
+        }
+
+        stage('Service Status') {
+            steps {
+                sshagent(['jenkins-ssh-key']) {
+                    sh '''
+                        ssh ${REMOTE_USER}@${REMOTE_HOST} '
+                            echo "=== System Services ==="
+                            systemctl list-units --type=service --state=running
+                            echo "=== Failed Services ==="
+                            systemctl list-units --failed
+                        '
+                    '''
+                }
+            }
+        }
+
+        stage('Security Check') {
+            steps {
+                sshagent(['jenkins-ssh-key']) {
+                    sh '''
+                        ssh ${REMOTE_USER}@${REMOTE_HOST} '
+                            echo "=== Last Login Attempts ==="
+                            last | head -n 10
+                            echo "=== Current Users ==="
+                            who
+                            echo "=== Open Ports ==="
+                            sudo ss -tulpn
+                        '
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed! Check the logs for details.'
+        }
+        always {
+            echo 'Pipeline execution finished'
+        }
+    }
+}
+    </script>
+    <sandbox>true</sandbox>
+  </definition>
+  <triggers/>
+  <disabled>false</disabled>
+</flow-definition>

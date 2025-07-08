@@ -9,7 +9,7 @@
         <hudson.model.StringParameterDefinition>
           <name>VM_IDS</name>
           <description>Space-separated list of VM IDs to backup (leave empty for all VMs)</description>
-          <defaultValue>1300 1400 2000 2100 3000 3300</defaultValue>
+          <defaultValue>1400 2000 2100 3000 3300</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
           <name>BACKUP_RETENTION_DAYS</name>
@@ -54,48 +54,34 @@
 pipeline {
     agent any
     
-    stages {
-        stage('Backup VMs') {
-            steps {
-                sh '''
-                    # Use parameters for backup configuration
-                    if [ -n "${VM_IDS}" ]; then
-                        ssh -v ansibleadmin@proxmox.devopsfables.net "sudo vzdump ${VM_IDS} --compress zstd --mode ${BACKUP_MODE}"
-                    else
-                        ssh ansibleadmin@proxmox.devopsfables.net "sudo vzdump --all --compress zstd --mode ${BACKUP_MODE}"
-                    fi
-                    
-                    # Remove old backups based on retention parameter
-                    find /var/lib/vz/dump -type f -mtime +${BACKUP_RETENTION_DAYS} -name '*.vma.zst' -delete
-                '''
-            }
-        }
-        
+    stages {      
         stage('Health Check') {
             steps {
-                // Run health checks on Proxmox host
-                sh '''
-                    # Check system resources
-                    ssh ansibleadmin@proxmox.devopsfables.net "sudo df -h"  # Check disk space
-                    ssh ansibleadmin@proxmox.devopsfables.net "sudo free -h"  # Check memory usage
-                    ssh ansibleadmin@proxmox.devopsfables.net "sudo uptime"  # Check load averages
-                    
-                    # Check cluster status if applicable
-                    ssh ansibleadmin@proxmox.devopsfables.net "sudo pvecm status" || echo "Not a cluster node"
-                    
-                    # Check running VMs/containers
-                    ssh ansibleadmin@proxmox.devopsfables.net "sudo qm list"  # List VMs
-                    ssh ansibleadmin@proxmox.devopsfables.net "sudo pct list"  # List containers
-                    
-                    # Check storage health
-                    ssh ansibleadmin@proxmox.devopsfables.net "sudo pvesm status"
-                    
-                    # Check for any failed services
-                    ssh ansibleadmin@proxmox.devopsfables.net "sudo systemctl list-units --state=failed"
-                    
-                    # Check logs for errors
-                    ssh ansibleadmin@proxmox.devopsfables.net "sudo journalctl -p err -n 50 --no-pager"
-                '''
+                sshagent(['jenkins-ssh-key']) {
+                    // Run health checks on Proxmox host
+                    sh '''
+                        # Check system resources
+                        ssh jenkins@192.168.1.205 "sudo df -h"  # Check disk space
+                        ssh jenkins@192.168.1.205 "sudo free -h"  # Check memory usage
+                        ssh jenkins@192.168.1.205 "sudo uptime"  # Check load averages
+                        
+                        # Check cluster status if applicable
+                        ssh jenkins@192.168.1.205 "sudo pvecm status" || echo "Not a cluster node"
+                        
+                        # Check running VMs/containers
+                        ssh jenkins@192.168.1.205 "sudo qm list"  # List VMs
+                        ssh jenkins@192.168.1.205 "sudo pct list"  # List containers
+                        
+                        # Check storage health
+                        ssh jenkins@192.168.1.205 "sudo pvesm status"
+                        
+                        # Check for any failed services
+                        ssh jenkins@192.168.1.205 "sudo systemctl list-units --state=failed"
+                        
+                        # Check logs for errors
+                        ssh jenkins@192.168.1.205 "sudo journalctl -p err -n 50 --no-pager"
+                    '''
+                }
             }
         }
         
@@ -103,31 +89,32 @@ pipeline {
             steps {
                 retry(3) {
                     timeout(time: 30, unit: 'MINUTES') {
-                        sh '''
-                            # Update package lists and upgrade packages on Proxmox host
-                            ssh ansibleadmin@proxmox.devopsfables.net "sudo apt update &amp;&amp; apt upgrade -y" || {
-                                echo "Package update failed, checking for lock files..."
-                                ssh ansibleadmin@proxmox.devopsfables.net "sudo rm -f /var/lib/apt/lists/lock /var/cache/apt/archives/lock /var/lib/dpkg/lock*"
-                                ssh ansibleadmin@proxmox.devopsfables.net "sudo dpkg --configure -a"
-                                exit 1
-                            }
-                            
-                            # Update container templates
-                            ssh ansibleadmin@proxmox.devopsfables.net "sudo pveam update"
-                            
-                            # Conditionally update containers
-                            if [ "${UPDATE_CONTAINERS}" = "true" ]; then
-                                ssh ansibleadmin@proxmox.devopsfables.net "sudo for ct in \$(pct list | tail -n +2 | cut -f1 -d &apos; &apos;); do pct exec \$ct -- apt update &amp;&amp; pct exec \$ct -- apt upgrade -y; done"
-                            fi
-                            
-                            # Conditionally update VMs
-                            if [ "${UPDATE_VMS}" = "true" ]; then
-                                ssh ansibleadmin@proxmox.devopsfables.net "sudo for vm in \$(qm list | tail -n +2 | cut -f1 -d &apos; &apos;); do qm guest cmd \$vm apt-get update || true; qm guest cmd \$vm apt-get upgrade -y || true; done"
-                            fi
-                            
-                            # Cleanup
-                            ssh ansibleadmin@proxmox.devopsfables.net "sudo apt autoremove -y  &amp;&amp; apt clean"
-                        '''
+                        sshagent(['jenkins-ssh-key']) {
+                            sh '''
+                                # Update package lists and upgrade packages on Proxmox host
+                                ssh -t jenkins@192.168.1.205 "sudo -i bash -c 'apt update &amp;&amp; apt upgrade -y'" || {
+                                    echo "Package update failed, checking for lock files..."
+                                    ssh -t jenkins@192.168.1.205 "sudo -i bash -c 'rm -f /var/lib/apt/lists/lock /var/cache/apt/archives/lock /var/lib/dpkg/lock* &amp;&amp; dpkg --configure -a'"
+                                    exit 1
+                                }
+                                
+                                # Update container templates
+                                ssh -t jenkins@192.168.1.205 "sudo -i bash -c 'pveam update'"
+                                
+                                # Conditionally update containers
+                                if [ "${UPDATE_CONTAINERS}" = "true" ]; then
+                                    ssh -t jenkins@192.168.1.205 "sudo -i bash -c 'for ct in \$(pct list | tail -n +2 | cut -f1 -d \" \"); do pct exec \$ct -- apt update &amp;&amp; pct exec \$ct -- apt upgrade -y; done'"
+                                fi
+                                
+                                # Conditionally update VMs
+                                if [ "${UPDATE_VMS}" = "true" ]; then
+                                    ssh -t jenkins@192.168.1.205 "sudo -i bash -c 'for vm in \$(qm list | tail -n +2 | cut -f1 -d \" \"); do qm guest cmd \$vm apt-get update || true; qm guest cmd \$vm apt-get upgrade -y || true; done'"
+                                fi
+                                
+                                # Cleanup
+                                ssh -t jenkins@192.168.1.205 "sudo -i bash -c 'apt autoremove -y &amp;&amp; apt clean'"
+                            '''
+                        }
                     }
                 }
             }
@@ -135,34 +122,61 @@ pipeline {
         
         stage('Performance Metrics') {
             steps {
-                sh '''
-                    # Collect CPU, Memory, and I/O statistics
-                    ssh ansibleadmin@proxmox.devopsfables.net "sudo sar -u 1 5"  # CPU usage
-                    ssh ansibleadmin@proxmox.devopsfables.net "sudo iostat -x 1 5"  # I/O statistics
-                    
-                    # VM Performance metrics
-                    ssh ansibleadmin@proxmox.devopsfables.net "sudo for vm in \$(qm list | tail -n +2 | cut -f1 -d' '); do echo \"VM \$vm stats:\"; qm monitor \$vm info balloon cpu status 2>/dev/null || true; done"
-                    
-                    # Network statistics
-                    ssh ansibleadmin@proxmox.devopsfables.net "sudo iftop -t -s 5"
-                '''
+                sshagent(['jenkins-ssh-key']) { 
+                    sh '''
+                        # Collect CPU, Memory, and I/O statistics
+                        ssh jenkins@192.168.1.205 "sudo sar -u 1 5"  # CPU usage
+                        ssh jenkins@192.168.1.205 "sudo iostat -x 1 5"  # I/O statistics
+                        
+                        # VM Performance metrics
+                        ssh jenkins@192.168.1.205 "sudo for vm in \$(qm list | tail -n +2 | cut -f1 -d' '); do echo \"VM \$vm stats:\"; qm monitor \$vm info balloon cpu status 2>/dev/null || true; done"
+                        
+                        # Network statistics
+                        ssh jenkins@192.168.1.205 "sudo iftop -t -s 5"
+                    '''
+                }
             }
         }
         
         stage('Security Audit') {
             steps {
-                sh '''
-                    # Check for failed SSH attempts
-                    ssh ansibleadmin@proxmox.devopsfables.net "sudo grep 'Failed password' /var/log/auth.log | tail -n 10"
-                    
+                sshagent(['jenkins-ssh-key']) {
+                    sh '''
+                        # Check for failed SSH attempts
+                        ssh jenkins@192.168.1.205 "sudo grep 'Failed password' /var/log/auth.log | tail -n 10"
+                        
                     # Check for unusual sudo usage
-                    ssh ansibleadmin@proxmox.devopsfables.net "sudo grep sudo /var/log/auth.log | tail -n 10"
+                    ssh jenkins@192.168.1.205 "sudo grep sudo /var/log/auth.log | tail -n 10"
                     
                     # List listening ports
-                    ssh ansibleadmin@proxmox.devopsfables.net "sudo ss -tulpn"
+                    ssh jenkins@192.168.1.205 "sudo ss -tulpn"
                     
                     # Check firewall status
-                    ssh ansibleadmin@proxmox.devopsfables.net "sudo pve-firewall status"
+                        ssh jenkins@192.168.1.205 "sudo pve-firewall status"
+                    '''
+                }
+            }
+        }
+    }
+
+    stage('Backup VMs') {
+        steps {
+            sshagent(['jenkins-ssh-key']) {
+                sh '''
+                    # Use parameters for backup configuration
+                    if [ -n "${VM_IDS}" ]; then
+                        ssh jenkins@192.168.1.205 "sudo vzdump ${VM_IDS} --compress zstd --mode ${BACKUP_MODE}"
+                    else
+                        ssh jenkins@192.168.1.205 "sudo vzdump --all --compress zstd --mode ${BACKUP_MODE}"
+                    fi
+                    
+                    # # Remove old backups based on retention parameter
+                    # if [ -d "/var/lib/vz/dump" ]; then
+                    #     find /var/lib/vz/dump -type f -mtime +${BACKUP_RETENTION_DAYS} -name '*.vma.zst' -delete
+                    # else
+                    #     echo "Backup directory /var/lib/vz/dump not found"
+                    #     exit 0
+                    # fi
                 '''
             }
         }

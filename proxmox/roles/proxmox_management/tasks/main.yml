@@ -9,7 +9,7 @@
     file: proxmox/create-groups.yml
 - name: Required user check
   ansible.builtin.include_tasks:
-    file: proxmox/user-check.yml
+    file: proxmox/create-users.yml
 - name: Create pools
   ansible.builtin.include_tasks:
     file: proxmox/create-pools.yml

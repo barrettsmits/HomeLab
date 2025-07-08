@@ -63,8 +63,7 @@
         - ansible
         - credentials
         - ssh-credentials
-        - AnsiColor
-        - docker
+        - ssh-agent
         - docker-workflow
         - kubernetes
         - blueocean
@@ -89,6 +88,102 @@
         user: admin
         password: "{{ jenkins_admin_password.stdout }}"
 
+    # CHECK IF KEY PAIR EXISTS IN ROOT .SSH
+    - name: Check if key pair exists
+      command: |
+        ssh-keygen -l -f ~/.ssh/jenkins_key.pub
+      register: key_pair_check
+      changed_when: false
+      ignore_errors: true
+      
+    - name: Create key pair if it doesn't exist
+      command: |
+        ssh-keygen -t ed25519 -C "Jenkins key pair" -f ~/.ssh/jenkins_key -N ""
+      when: key_pair_check.rc is defined and key_pair_check.rc != 0
+      register: key_pair_creation
+      changed_when: true
+
+    - name: Add key pair to authorized_keys
+      lineinfile:
+        path: ~/.ssh/authorized_keys
+        line: "{{ lookup('file', '~/.ssh/jenkins_key.pub') }}"
+        create: yes
+      when: key_pair_check.rc is defined and key_pair_check.rc != 0
+
+    - name: Copy public key to Jenkins
+      copy:
+        src: ~/.ssh/jenkins_key.pub
+        dest: /tmp/jenkins_key.pub
+        owner: jenkins
+        group: jenkins
+        mode: '0644'
+        remote_src: yes
+      
+    # Add the private key to Jenkins credentials
+    - name: Create Jenkins credentials directory if it doesn't exist
+      file:
+        path: /var/lib/jenkins/credentials
+        state: directory
+        owner: jenkins
+        group: jenkins
+        mode: '0700'
+          
+    - name: Create Jenkins .ssh directory if it doesn't exist
+      file:
+        path: /var/lib/jenkins/.ssh
+        state: directory
+        owner: jenkins
+        group: jenkins
+        mode: '0700'
+
+    - name: Copy private key to Jenkins
+      copy:
+        src: ~/.ssh/jenkins_key
+        dest: /var/lib/jenkins/.ssh/jenkins_key
+        owner: jenkins
+        group: jenkins
+        mode: '0600'
+        remote_src: yes
+      register: jenkins_key_copy
+      
+    # Add the SSH key to Jenkins credentials store
+    - name: Add SSH key to Jenkins credentials
+      jenkins_script:
+        script: |
+          import jenkins.model.*
+          import com.cloudbees.plugins.credentials.*
+          import com.cloudbees.plugins.credentials.domains.*
+          import com.cloudbees.jenkins.plugins.sshcredentials.impl.*
+          import hudson.plugins.sshslaves.verification.*
+          
+          def jenkins = Jenkins.getInstance()
+          def domain = Domain.global()
+          def store = jenkins.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
+          
+          def privateKey = new BasicSSHUserPrivateKey.DirectEntryPrivateKeySource(
+            new File('/var/lib/jenkins/.ssh/jenkins_key').text
+          )
+          
+          def credentials = new BasicSSHUserPrivateKey(
+            CredentialsScope.GLOBAL,
+            'jenkins-ssh-key',
+            'jenkins',
+            privateKey,
+            '',
+            'Jenkins SSH Key for Pipelines'
+          )
+          
+          // Remove existing credentials with the same ID if they exist
+          def existingCredentials = store.getCredentials(domain).find { it.id == 'jenkins-ssh-key' }
+          if (existingCredentials) {
+            store.removeCredentials(domain, existingCredentials)
+          }
+          
+          store.addCredentials(domain, credentials)
+        user: admin
+        password: "{{ jenkins_admin_password.stdout }}"
+      when: jenkins_key_copy is changed or key_pair_creation is changed
+
     # PIPELINE SETUP
     - name: Create Proxmox management pipeline
       jenkins_job:
@@ -106,3 +201,17 @@
         password: "{{ jenkins_admin_password.stdout }}"
         url: http://localhost:8080
         user: admin 
+    
+    # SIMPLE Pipeline
+    - name: Create simple pipeline
+      jenkins_job:
+        config: "{{ lookup('template', 'templates/simple-pipeline.xml.j2') }}"
+        name: "simple-pipeline"
+        password: "{{ jenkins_admin_password.stdout }}"
+        url: http://localhost:8080
+        user: admin
+    
+    # JENKINS restart
+    - name: Restart Jenkins
+      command: |
+        systemctl restart jenkins
